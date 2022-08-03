@@ -1,46 +1,19 @@
 "Artigo";"AM";"DP";"DN";"FR";"GA";"IC";"ME";"NE";"NI";"TE";"VR"
-"A Fast Similarity Search kNN for Textual Datasets.pdf";0;0;0;0;0;0;0;0;0;1;0
-"A Fast and Generic GPU-Based Parallel Reduction Implementation.pdf";0;0;0;0;0;0;0;0;0;1;0
-"A GPU-FPGA-Based K-Means Clustering Using a Parameterized Code Generator.pdf";0;0;0;0;0;0;0;0;0;4;0
-"A Methodology for Optimization of Interpreters.pdf";0;0;0;0;0;0;0;0;0;0;0
-"A Parallel Approach of Simulated Annealing Using GPGPU to Solve the Quadratic Assignment Problem.pdf";0;0;0;0;0;0;0;0;0;7;0
-"Acceleration of a Computational Simulation Application for Radiofrequency Ablation Procedure Using GPU.pdf";0;0;0;0;0;0;0;0;0;0;0
-"An Interference-Aware Virtual Machine Placement Strategy for High Performance Computing Applications in Clouds.pdf";0;0;0;0;0;0;0;0;0;5;0
-"Analysis of Congestion Control Virtualization on Execution of Hadoop MapReduce Application.pdf";0;0;0;0;0;0;0;0;0;1;0
-"Analysis of Optimization Opportunities for Intel Xeon Phi and Intel Xeon Scalable Processors Environments of a Numerical Method for the Biphasic Flow of Fluids in Porous Media.pdf";0;0;0;0;0;0;0;0;0;6;0
-"Analysis of Parallel and Vectorized Algorithms of Pre-Stack Kirchhoff Time Migration in Virtual Environments.pdf";0;0;0;0;0;0;0;0;0;1;0
-"Analysis of Potential Online Scheduling Improvements by Real-Time Strategy Selection.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Application of the SmartLB Load Balancer to Runtime and Power Consumption Reduction of Applications in Parallel Environments.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Assessing the Computation and Communication Overhead of Linux Containers for HPC Applications.pdf";0;0;0;0;0;0;0;0;0;0;0
+"A GPU-FPGA-Based K-Means Clustering Using a Parameterized Code Generator.pdf";0;0;0;0;0;0;0;0;0;3;0
+"A Parallel Approach of Simulated Annealing Using GPGPU to Solve the Quadratic Assignment Problem.pdf";0;0;0;0;0;0;0;0;0;6;0
 "Automatic Minimization of Execution Costs of SPITS Programs in AWS.pdf";0;0;0;0;0;0;0;0;0;35;0
-"CPU Bound Analysis of Wordcount Application in Hadoop Yarn Virtualized Nodes Using the Xen Platform.pdf";0;0;0;0;0;0;0;0;0;0;0
 "Computational Optimization of Model BRASIL-SR.pdf";0;0;0;0;0;0;0;0;0;5;0
-"Evaluation of Timing Side-Channel Leakage on a Multiple-Target Dynamic Binary Translator.pdf";0;0;0;0;0;0;0;0;0;10;0
 "Experimentation and Analysis of Dynamic Checkpoint on Apache Hadoop with Failure Scenarios.pdf";0;0;0;0;0;0;0;0;0;10;0
-"Hybrid Storage Architecture for Internet of Things.pdf";0;0;0;0;0;0;0;0;0;0;0
 "Impact of Memory Approximation on Energy Efficiency.pdf";1;0;0;0;0;0;0;0;0;3;0
-"Improving I-O Performance of RTM Algorithm for Oil and Gas Simulation.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Introducing Drowsy Technique to Cache Line Usage Predictors.pdf";0;0;0;0;0;0;0;0;0;0;0
 "Load Balancing for Iterative Applications in Heterogeneous Architectures.pdf";0;0;0;0;0;0;0;0;0;15;0
-"MParCO A Minimalist Parallel Framework for Combinatorial Optimization Applications.pdf";0;0;0;0;0;0;0;0;0;0;0
-"MapReduce with Components for Processing Big Graphs.pdf";0;0;0;0;0;0;0;0;0;0;0
-"MonTerDC Data Center Thermal Monitoring System.pdf";0;0;0;0;0;0;0;0;0;0;0
-"On the Efficiency of Transactional Code Generation A GCC Case Study.pdf";0;0;0;0;0;0;0;0;0;0;0
-"On the Performance of Multithreading Applications under Private Cloud Conditions.pdf";0;0;0;0;0;0;0;0;0;0;0
 "Optimizing Geophysics Models Using Thread and Data Mapping.pdf";0;0;0;0;0;0;0;0;0;5;0
 "P-TWDTW Parallel Processing of Time Series Remote Sensing Images Using Manycore Architectures.pdf";1;0;0;2;0;0;1;0;0;6;0
 "Parallel and Distributed Processing Support for a Geospatial Data Visualization DSL.pdf";0;0;0;0;0;0;0;0;0;17;0
-"Performance Evaluation to Provide StaaS to IoT Devices in Fog Computing Environment.pdf";0;3;0;0;0;0;7;0;0;23;0
-"Performance and Energy Consumption Aspects in Migrating Big Data Systems to the Cloud.pdf";0;0;0;0;0;0;0;0;0;23;0
-"Performance and Energy Efficiency Evaluation for HPC Applications in Heterogeneous Architectures.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Phase Detection and Analysis among Multiple Program Inputs.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Power Consumption of Parallel Programming Interfaces in Multicore Architectures A Case Study.pdf";0;0;0;0;0;0;0;0;0;0;0
-"Reducing Global Schedulers Complexity through Runtime System Decoupling.pdf";0;0;0;0;0;0;0;0;0;1;0
-"Resources Optimization in ICNs through Distributed Cache Using Software Defined Networking - SDN.pdf";0;0;0;0;0;0;0;0;0;0;0
-"SMCis Scientific Applications Monitoring Tool for HPC Environments.pdf";23;0;0;0;0;0;0;0;0;9;0
+"Performance Evaluation to Provide StaaS to IoT Devices in Fog Computing Environment.pdf";0;3;0;0;0;0;6;0;0;23;0
+"Performance and Energy Consumption Aspects in Migrating Big Data Systems to the Cloud.pdf";0;0;0;0;0;0;0;0;0;22;0
+"SMCis Scientific Applications Monitoring Tool for HPC Environments.pdf";23;0;0;0;0;0;0;0;0;8;0
 "Samsara Architecture Exploring Situation Awareness in Cloud Computing Management.pdf";0;0;0;0;0;0;0;0;0;6;0
 "Simulators Usage Analysis to Estimate Power Consumption in Cloud Computing Environments.pdf";0;0;0;0;0;0;0;0;0;17;0
-"Towards a High-Performance RISC-V Emulator.pdf";0;0;0;0;0;0;0;0;0;2;0
 "Transactional Boosting on Glasgow Haskell Compiler.pdf";0;0;0;0;0;0;0;0;0;6;0
 "User-Level Transaction Scheduling in Haskell.pdf";0;0;0;0;0;0;0;0;0;4;0
-"Video7 An Architecture for Storage and Recovery of Streaming Audio and Video in NoSQL Database.pdf";0;0;0;0;0;0;0;0;0;20;0
+"Video7 An Architecture for Storage and Recovery of Streaming Audio and Video in NoSQL Database.pdf";0;0;0;0;0;0;0;0;0;18;0
