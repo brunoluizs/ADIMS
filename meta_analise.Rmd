@@ -164,62 +164,10 @@ df = df   %>%
 df = spread(df, tipo, n)
 df
 
-
-
 ```
 
 
 
-#df_raw
-#Visulizamos os distribuição dos termos estatiticos por ano
-
-boxplot(df_raw$ano ~ df_raw$tipo)
-
-#Executamos Análise de variância
-#Observar valor de p maior que 0,05 (Pr(>F))
-#Hipótese nula de que não há diferença significativa
-
-an =  aov(ano ~ termo, data=df_raw)
-summary(an)
-
-#Anova de dois fatores
-#Nenhum valor de P mostra diferença significativa
-
-an =  aov(ano ~ termo * tipo, data=df_raw)
-summary(an)
-
-
-
-#Teste de Shapiro termos estatisticos
-#Valor de p acima de 0,05, não há indício para a não confirmar a hipótese nula de dados normalmente #distribuidos
-
-shapiro.test(df$EST)
-
-#Media termos estatísticos
-mean(df$EST)
-
-#Gráfico QQ termos estatísticos
-
-qqnorm(df$EST)
-#linha
-qqline(df$EST)
-
-#Gráfico QQ metricas
-
-qqnorm(df$MET)
-#linha
-qqline(df$MET)
-
-
-
-
-#Histograma com linha de densidade
-```{r}
-#rodar com Ctrl+shift+enter
-hist(df$EST, main="")
-par(new=TRUE)
-plot(density(df$EST),ylab = "", xlab = "", axes=F, lwd=2.5 ) 
-```
 ```{r}
 # Read raw csv data
 df_raw = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/DadosWSCAD/resultados2.csv",  header=TRUE, sep=";") 
