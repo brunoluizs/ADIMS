@@ -1,0 +1,756 @@
+Scanned Document
+Integração Extended SiniMan Tool & CCS- Simulação de Arquiteturas 
+Superescalares em Clusters 
+Wagston Tassoni Staehler 
+Instituto de ll~formática UFRGS 
+tassoni@infuji·gs.br 
+Guilherme Dal Pizzol 
+Instituto de ll~formática­
+UFRGS 
+gpizzol@infufrgs.br 
+Philippe O. A. Navaux 
+Instituto de lnfonnática UFRGS 
+navaux@illfufrgs.br 
+Resumo 
+Simulação é o método mais usado e eficiente para 
+projeto de novos processadores. Através dela podemos 
+reproduzir e considerar os parâmetros e variáveis de uma 
+arquitetura real, como por exemplo, arquiteturas 
+superescalares. Com este illfuito foi desenvolvido o 
+software de gerenciamemo de simulações Extended 
+SimMan. Esta ferramenta é uma inte1jace gráfica para os 
+simuladores do SimpleScalar Tool Set, gerando arquivos 
+de configuração e gerenciando as simulações em 
+diferemes máquinas e extraindo os dados de interesse dos 
+arquivos de resultados e apresentando-os em gráfico e 
+tabela. 
+O Extended SimMan pode utilizar as máquinas de uma 
+rede para exeçutar as simulações, e também os nados de 
+um cluster, através do software de gerenciamento de 
+cluste rs CCS. 
+A idéia, afinal. é tomar o processo de simulação o 
+mais simples e transparente possível ao usuário final, 
+mascarando os vários programas envolvidos bem como 
+os formatos dos arquivos utilizados e reduzindo 
+drasticamente o ônus no lançamento de simulações que 
+levam muitas vezes mais de 24 horas de duração. 
+1. Introdução 
+Processadores superescalares aumentam a desempenho 
+de processamento através da execução de instruções 
+concorrentes [ 12]. Elas exploram o paralelismo entre 
+instruções fazendo uso de pipeline de múltiplos estágios, 
+múltiplas unidades funcionais, escalonamento dinâmico, 
+mecanismos de previsão de desvios e execução fora de 
+ordem. 
+Por outro lado, este aumento de desempenho torna os 
+processadores modernos difíceis de avaliar, graças à alta 
+complexidade dos elementos usados na sua construção. 
+Existem três maneiras de analisar a desempenho destes 
+prodígios da engenharia moderna: execução direta, 
+modelos analíticos e simulação. Execução direta não é, 
+muitas vezes, usada porque se precisa do chip para testar. 
+56 
+Modelos analíticos precisos são difíceis de desenvolver e 
+necessitam de muito conhecimento matemático. 
+A solução é a simulação, mais simples e eficiente como 
+modelador e não precisa do chip para fazer a análise. O 
+processador pode ser descrito em linguagem de alto nível, 
+como CIC++. permitindo a exploração de uma grande área 
+de projeto e facilitando a análise antes do hardware 
+tornar-se disponíve l. 
+Um bom exemplo de ferramentas desenvolvidas para a 
+simulação de processadores é o SimpleScalar Tool Set 
+[2], um conjunto de simuladores, compiladores e 
+utilitários que permitem desde uma simples simulação 
+funcional até uma complexa simulação de processadores 
+do estado-da-arte. Ferramentas estas que podem ter seu 
+uso prejudicado devido a sua interface textual. Como o 
+usuário deve lidar com um grande número de arquivos de 
+configuração e de resultados, o trabalho de realizar estas 
+ações manualmente por linha de comando torna-se 
+oneroso em matéria de tempo e esforço. 
+Desta forma, uma ferramenta que possa gerenc iar 
+simulações é de grande valia para usuários de 
+simuladores. Esta é a meta do presente trabalho: ajudar os 
+usuários do SimpleScalar a executar simulações de uma 
+maneira rápida e eficiente. 
+O Extended SimMan (Sinwlation Manager) provém as 
+seguintes funcionalidades: 
+• Interface gráfica e intuitiva; 
+• Criação/edição de arquivos de configuração 
+(simples/múltiplos); 
+• Controle de execução de simuladores em 
+diferentes máquinas de uma rede e também com 
+suporte a cluster através do gerenciador CCS; 
+• Visualização gráfica dos resultados (tabela, 
+gráfico). 
+Para dinamizar ainda mais o processo de simulação, foi 
+feita uma integração desta ferramenta com o CCS, de 
+modo a tornar os nodos do cluster disponíveis para que o 
+Extended SimMan execute as simulações no menor tempo 
+possível. 
+Anais WSCAD 2003 
+2. SimpleScalar Tool Set 
+SimpleScalar Tool Set foi desenvolvido em WisconsinMadison University. com o objetivo de permitir 
+simulações de arquiteturas usuais, como, por exemplo. as 
+arquiteturas supen:scalares. É utilizado. inclusive, em 
+centros de pesquisa de arquiteturas de computadores em 
+todo o mundo. 
+Estas ferramentas implementam a arquitetura 
+SimplcScalar, similar à arquitetura MIPS [ 10] . A 
+ferramenta tem duas versões, big-endian e little-endian, 
+para manter a portabilidade em diferentes sistemas. A 
+semântica ISA do SimpleScalar é um superconjunto do 
+MIPS-IV ISA, sendo chamada PISA (Portable ISA). 
+As principais vantagens desta ferramenta são alta 
+llexibilidade, portabilidade, extensibilidade c 
+desempenho. Seis simuladores orientados à execução são 
+incluídos, os quais serão detalhados mais tarde. Além 
+disso. a ferramenta fornece binários pré-compilados 
+(incluindo o SPEC95) e uma versão modificada do GCC 
+(GNU Compiler C), a qual permite a compilação de 
+código fonte C. Um depurador e um visualizador de 
+pipeline também estão disponíveis. 
+Simulações funcionais podem ser feitas pe lo sim-fast e 
+sim-safe onde cada instrução é executada 
+seqüencialmente. A principal diferença entre eles é que o 
+.último verifica o alinhamento e a permissão de acesso a 
+cada referência de memória. Simulação de memória coche 
+pode ser feita facilmente com sim-coche e sim-cheetah. O 
+segundo traz uma nova política de substituição 
+desenvolvida pelo criador do simulador [ 13]. O quinto 
+simulador disponível é chamado sim-profi/e. Ele gera o 
+profile de cada classe de instruções. 
+O último e mais detalhado simulador é chamado simoutorder e é um processador completo incluindo 
+simulação de ciclos. Este é o simulador usado na 
+implementação do Extended SimMan. O sim-outorder 
+suporta execução fora de ordem, baseada na Register 
+Update Unir (RUU) e o sistema de memória usa uma fila 
+load/store. Este simulador implementa um pipeline de seis 
+estágios: busca, despacho, escalonamento, execução, 
+escrita de resultados e graduação. 
+Como pode ser notado, o simulador sim-outorder 
+possui muitos parâmetros de configuração que podem ser 
+alterados para obter diferentes tipos de experimentos, 
+conforme desejado por um pesquisador de arquiteturas de 
+computadores. Os principais parâmetros que podem ser 
+alterados são: 
+• Largura dos estágios de busca, decodificação, 
+despacho e graduação; 
+• Tipos de execução (in-order, out-of-order); 
+• Tamanho das filas de instruções (busca, 
+despacho, load/store, RUU); 
+61 
+• Número de unidades funcionais (inteiro e pontollutuante); 
+• Configurações de cac:he (níveis unificados. 
+associatividade, política de substituição): 
+• Configuração do previsor de desvios. 
+3. Extended SimMan Tool 
+Extended SimMan (Simttlation Manager), mostrado na 
+Figura I , é uma ferramenta auxi liar para simulação de 
+processadores. usando por base os simuladores do 
+SimpleScalar Tool Set, descrito anteriormente. A 
+ferramenta fornece três func ionalidades básicas: 
+• Geração de arquivos de configuração dos 
+simuladores: 
+• Execução de simulações com múltiplos arquivos 
+de configuração c benchmarks em vanas 
+máquinas (em uma rede ou em um clttster); 
+• Extração das estatísticas dos arquivos de 
+resultados dos si muladores e visualização das 
+mesmas em gráfico e tabela. 
+·---~ ~~lo- ~· 
+. .. : ·_ n ....!::!J1""' ..., .. .,... .. _ .. 
+···---~ -·-~ 
+- ~ -·- r;;::---........ ~ flll=z::=:-------·· _ . ..,. ,. . ....,.. ... __ _ 
+··--·-· .. ·· -.. ... -.. ---·l 
+i 
+•. l 
+I I I .. I 
+I I 
+.1 --- ·.~-:..-:::::---. =~lliU • t 'ft 
+·~ ··--· ,, .. 
+·~ 
+~~ ·~ 
+.~ ·~ 
+.~· ... .. . .. , __ 
+~ .: ::·''·] t....~---·:_:!. 
+Figura 1. Extended SimMan 
+A ferramenta, como citada acima, permite a edição de 
+arquivos de configuração do sim-outorder, o mais usado e 
+conhecido simulador do SimpleScalar Tool Set. Este 
+simulador, como os outros do SimpleScalar, tem sua 
+configuração e resultados salvos em arquivos, em um 
+formato textual próprio. Com Extended SimMan, os 
+usuários do simulador não precisam se preocupar com 
+estes formatos. Através de uma interface gráfica que será 
+detalhada depois, eles poderão gerar facilmente estes 
+arquivos. E, além disso, muitas vezes em uma avaliação 
+de arquitetura de computador são necessários múltiplos 
+arquivos de configuração, variando-se apenas alguns 
+parâmetros arquiteturais. Utilizando a ferramenta, o 
+usuário está apto a gerar vários arquivos de configuração 
+em um único passo, escolhendo os parâmetros e os valores 
+que mudarão· de arquivo para arquivo. 
+Anais WSCAD 2003 
+Controlar a execução da simulação pode aparentemente 
+ser uma tarefa fácil. O problema aparece quando há vários 
+processos de simuladores em diferentes máquinas, usando 
+diferentes arquivos de configuração e benchmarks. A 
+ferramenta permite a execução do simulador em diferentes 
+máquinas. com múltiplos arquivos de configuração c 
+benclunarks conforme desejado pelo usuário. De acordo 
+com a informação fornecida pelo usuário, a ferramenta 
+executa os simuladores nas máquinas disponíveis, usando 
+a correta conliguração c benchmark. A informação 
+provida pelo usuário inc lui: benchmarks, configurações, 
+máquinas e o simulador a usar. A ferramenta avisa quando 
+a simulação inicia e quando termina. 
+Extcnded SimMan também permite que, ao final da 
+simulação. ou com uma simulação prévia já concluída. o 
+usuário faça a extração das estatísticas dos arquivos de 
+resultados gerados pelos simuladores. O usuário informa a 
+estatística a ser extraída e onde estão os arquivos. A 
+ferramenta gera e salva um arquivo texto com estas 
+informações. Além disso, o usuário também poderá 
+visualizá-las em gráfico ou tabela. 
+Como fica evidente, qualquer pessoa que deseje 
+utilizar os simuladores do SimpleScalar Tool Set, desde 
+estudantes a pesquisadores, podem usar esta ferramenta. A 
+principal vantagem do Extended SimMan é tornar 
+transparentes ao usuário os arquivos de configuração, 
+complicadas linhas de comandos e manipulação de 
+arquivos de resultados. 
+Extended SimMan foi implementada em GNU Linux 
+com Borland Kylix [9] e com a ajuda de scripts bas/1 e 
+awk [3,4]. A aplicação é MOI (Multiple Document 
+lmeiface). i.e., a janela principal mantém todas as janelas 
+filhas dentro de sua área cliente. Assim, o usuário pode 
+edi tar múltiplos arquivos com apenas uma instância do 
+programa. Ao mesmo tempo em que ele está editando 
+arquivos, é possível executar e gerenciar uma simulação, 
+como a Figura 2 mostra. 
+, .......... __ _ 
+lrir.i:·-.;:.._~;_:.:;;'j.;;c:,':_,_.-'•.;_"-"'-"-'' 1---'"'-lc.--:;:::~7.:. •• .,. ... ,-., 
+r .. .,., ... 
+--'-- r,... .. - r---r--"n 
+~ .--:1 
+=o· ·=:-..... ... . 
+..!:, ___ ...:: .. ;...!.., -~--~==~====~~- ---- - -----Figura 2. Aplicação MOI 
+Estes três módulos são independentes. ou seja, se o 
+usuário desejar editar um arquivo de configuração ou 
+extrair estatísticas não precisa configurar uma simulação. 
+Eles são detalhados a seguir. 
+58 
+3.1 Módulo I 
+Configuração 
+Edição de Arquivos de 
+O primeiro módulo é o gerador de arquivos de 
+configuração para o simulador sim-oworder. Neste 
+módulo, o usuário pode gerar, de uma forma rápida, fácil 
+e eficiente. um ou múltiplos arq uivos de uma vez. Na 
+verdade, ele não precisará conhecer nem o formato de um 
+arquivo de configuração. A ferramenta cuida disto. 
+1 
+.. ,_ ___ _ 
+l "'" r.:-- , '""' 
+! ;.. r:;:- r JY(I 
+1
+-r- ,,_ 
+l l.wrr r., ... 
+i nG 
+··:\.1 t;~o..-...:=::-------; 
+Se-• ~ ..... 
+.S. r:;;- ,.. '-O _, ,. ._ 
+L~l r *"' 
+nG 
+,-=-.:1 r 
+I r 
+I r 
+nG 
+I
+. u,;::-p- • '"' J 
+S. fLI f' IW() I 
+i ~ r.- ,. ...... I 
+1·-·r r ..... , 
+i nG 
+Figura 3. Edição de arquivos de configuração 
+Este módulo está dividido em categorias de 
+configuração, i.e. , o usuário tem as configurações 
+separadas em classes. Esta separação pode ser vista 
+diretamente na interface. já que ela foi implementada 
+como uma janela com múltiplas páginas, como pode ser 
+visto na Figura 3. 
+As seguintes classes de configuração são oferecidas: 
+• General: parâmetros específicos do simulador 
+são encontrados aqui. Por exemplo, arquivos de 
+saída de benchmarks c simuladores e números de 
+instruções a serem executadas. A opção que 
+habilita a criação de múltiplos arquivos também 
+está aqui. 
+• Pipeline: as opções específicas do pipeline do 
+sim-outorder são encontradas nesta página. 
+Larguras de busca, decodificação, despacho ou 
+de graduação podem ser configuradas aqui. 
+• Bpred: a configuração do previsor de desvios é 
+encontrada aqui. Um dos seis diferentes 
+previsores de desvio implementados pelo simoutorder pode ser escolhido aqui. Dependendo 
+do previsor escolhido, configurações específicas 
+são habilitadas, tomando a tarefa ainda mais fáci l 
+para usuários que não estão habituados com o 
+processo. 
+• Caches: nível I e 2 podem ser configuradas aqui. 
+É possível definir se cada nível será unificado ou 
+não e suas latências específicas. Além disso, para 
+cada caclle é possível definir o número de 
+Anais WSCAD 2003 
+conjuntos, associatividade, número de linhas e 
+blocos, política de substituição. 
+• FU's & TLB: nesta página estão as 
+configurações das TLB' s, memória principal e 
+unidades funcionais. 
+• Others: qualquer outra configuração pode ser 
+inserida aqui , bem como comentários. Esta 
+página funciona como um pequeno editor de 
+texto. Ela pode ser usada para gerar arquivos de 
+conliguração para um simulador que use o simoutorder como base. Por exemplo, o simulador 
+ss-smt de arquiteturas SMT, desenvolvido por 
+Gonçalves 16]. 
+Numa simulação. o usuário geralmente deseja testar 
+sua arquitetura alvo com d iferentes valores para diversos 
+parâmetros (po r exemplo, combinando previsores de 
+desvio com diferentes conligurações de cache). Isto 
+implica em vários arquivos de configuração, cada um 
+diferindo de apenas u·ma ou duas linhas/colunas do outro. 
+Gerar manualmente estes arquivos não é muito simples. já 
+que cada arquivo deve ser editado, procurando pela 
+linha/coluna que deve ser mudada. Esta ferramenta 
+minimiza este problema. O usuário somente informa os 
+parâmetros que devem ser alterados com seus respectivos 
+valores, e a ferramenta gera os arquivos. não importando o 
+número deles. 
+O comportamento padrão do módulo/ferramenta é 
+gerar apenas um arquivo com os valores 
+inseridos/modificados pelo usuário. Para ativar a criação 
+de múltiplos arquivos, é necessário marcar a checkbox na 
+página "General". Desta forma, o modo múltiplos 
+arquivos está ativado. 
+~~""""-··-· ...... . . .... .... ··~ .......... . ......... ·--··-· ·-· ·-····- _ ...... 
+Figura 4. Edição de múltiplos arquivos de 
+configuração 
+O modo múltiplos arquivos apresenta caixas com o 
+número de valores a serem inseridos para cada parâmetro, 
+bem como um botão ''Set", que deve ser clicado para 
+adicionar os valores. Quando a configuração é salva, a 
+ferramenta gera um nome padrão, criado a partir do nome 
+do parâmetro. Por exemplo, se o usuário mudar três vezes 
+os valores do parâmetro X e duas vezes o parâmetro Y, a 
+59 
+ferramenta gerará arquivos com os respectivos nomes: 
+Con iX I_ Y I. ConfX I_ Y2, ConfX2_ Y I , ConfX2_ Y2. 
+ContX3_ Y I, Con1X3_ Y2. Este modo pode ser visto na 
+Figura 4. 
+3.2. Módulo 11 - Controle de Simulações 
+Este é o principal módulo da aplicação. Ele é 
+responsável por definir, executar e controlar simulações. 
+Com este módulo. o usuário não precisará gerenciar 
+manualmente a simulação, i.e .. ele não precisará acessar 
+várias máquinas para disparar seus processos, e além 
+disso, não precisará se preocupar com o fim de uma 
+execução para disparar outro processo na mesma máquina. 
+Com a ferramenta Extended SimMan, através deste 
+módulo, o usuário apenas define as máquinas (Figura 5). 
+benc:hmarks e arquivos de configuração que serão usados 
+na simulação. Com estas informações, a ferramenta 
+começa a executar os simuladores nas dadas máquinas. De 
+tempos em tempos (o tempo pode também ser definido). a 
+ferramenta checa o estado da execução em cada máquina e 
+d ispara novos processos quando possível. Quando não 
+existem mais processos rodando, a ferramenta finaliza a 
+simulação e avisa o usuário por e-mail e também na tela 
+da aplicação. Todos os resultados estarão no diretório 
+informado pelo usuário no início da simulação. E ainda, o 
+usuário pode salvar a configuração da simulação (dados 
+como arquivos envolvidos, máquinas) para uso posterior 
+em outras simulações. 
+:i; ~~ ~~~~·w•i•f 
+l)oo L·--~ 
+Figura 5. Adição de máquinas de uma rede 
+O usuário tem duas opções para iniciar a simulação. 
+Ele pode começar uma simulação desde o início ou partir 
+de uma simulação salva previamente. No caso de uma 
+simulação nova, o usuário deve informar se as máquinas 
+disponíveis são da rede ou de um cluster, afinal elas 
+possuem tratamentos diferentes. As máquinas da rede são 
+acessadas via comandos remotos ssh, e as máquinas do 
+cluster são acessadas através do software de 
+gerenciamento de clusters CCS [8]. Esteja claro que o 
+usuário não toma conhecimento da existência deste 
+Anais WSCAD 2003 
+software. pois o Extended SimMan mascara o seu 
+funcionamento. 
+Por intermédio do CCS. o Extended SimMan informa 
+ao usuário quantos nós estão d isponíveis. e este ind ica 
+quantas máquinas lhe são necessárias. Após alocar o 
+número de nós desejados. a conexão via rsh somente é 
+habilitada ao usuário que os alocou. e assim o Extended 
+SimMan ode dis arar os rocessos dos simuladores. 
+Figura 6. Configuração da simulação 
+Para iniciar uma simulação, além de máquinas, o 
+usuário deve informar os benclmwrks e arquivos de 
+configuração. Para tanto, a configuração da simulação 
+precisa ser acessada. através do menu 'Simulation". Esta 
+conliguração é dividida em seções: General , Machines. 
+·Benchmarks e Configurat ions (Figure 6). 
+Na seção 'Machines··, máquinas podem ser 
+adicionadas ou removidas. Nomes válidos de máquinas 
+precisam ser usados ou endereços IP. Não há nenhum 
+atributo especial para máquinas duais (com dois 
+processadores). Se uma máquina possui mais de um 
+processador, é necessário adicioná-la este número de 
+vezes. Também na seção 'Configurations'', arquivos de 
+configuração usados na simulação podem ser adicionados 
+ou removidos. 
+A seção 'Benchmarks'' é um pouco diferente das 
+outras, pois além de inserir/remover um benchmark da 
+lista, é possível editar sua linha de comando. Isto é 
+permitido porque um benclmw rk, como uma aplicação 
+normal, pode ter parâmetros por linha de comando. Um 
+exemplo é o bencltmark gzip, que tem os parâmetros: -9 
+<input tile>. Então, se os benchmar/(s têm parâmetros, 
+eles podem ser adicionados pela sua edição, depois do 
+caminho + nome do benchmark. 
+Configurações opcionais podem ser encontradas na 
+seção 'General", onde algumas opções globais podem ser 
+alteradas: o diretório dos resultados (o padrão é home do 
+usuário), o simulador a ser executado (o padrão é simoutorder) e o tempo de refresh (o padrão é 30s). O tempo 
+de refresh é o intervalo usado para atualizar as 
+informações de cada processo que está executando. Além 
+de atualizar as informações na tela, novos processos 
+podem ser disparados se houver uma máquina disponível. 
+60 
+A configuração de simulações a serem rodadas no 
+c/uster é similar, mudando apenas a seção 'Machines··. 
+Em vez disso, a ferramenta oferece o número de nodos 
+disponíveis para que o usuário informe a quantidade de 
+que necessitará e por quanto tempo. 
+I -.c. .... • 
+I::-·-· I <"V ·-··--··-·-··· "" 
+Figura 7. Execução da simulação 
+Com todo este conj unto de configurações, o processo 
+de simulação pode ser iniciado. A partir daqui, o usuário 
+pode acompanhar o estado das simulações durante a 
+execução dos processos. O usuário pode veri ficar, pela 
+tela, a memória física d isponível e memória swap. Além 
+disso, o usuário pode ver a quantidade de CPU util izada. 
+Todas estas informações são atualizadas de acordo com o 
+tempo de refreslt previamente setado pelo usuário. Esta 
+tela pode ser vista na Figura 7. 
+A conexão com máquinas remotas, bem como a 
+extração de informações delas, é feita por escripts bash + 
+awk, que usam ssh e/ou rsh para conectar nas máquinas 
+remotas. Por padrão, toda a comunicação entre a máquina 
+local c as máquinas remotas é fei ta por ssh, por causa dos 
+bem conhecidos problemas de segurança do rsh. Apesar 
+disso, rsh pode ser utilizado algumas vezes, como no caso 
+de clusters isolados da Internet por umfirewall. 
+O comportamento padrão de ssh/rsh é usar um método 
+de autenticação por senha. Para o Extended SimMan 
+trabalhar apropriadamente, é necessário desabilitar a 
+checagem de senha em rsh, através da criação de um 
+arquivo .rhosts no diretório home do usuário. Do mesmo 
+modo, ssh também precisa desabilitar a autenticação por 
+senha só que diferentemente do rsh, ssh trabalha com 
+criptografia, usando o conceito de troca de chaves 
+pública/privada. Logo, o usuário precisa criar o par de 
+chaves pública/privada para desabilitar a autenticação por 
+senha. 
+Como dito antes, a conexão e extração de dados são 
+realizadas utilizando scripts bash que usam ssh/rsh. Isto é 
+possível graças ao conceito de pipe, uma canalização onde 
+os dados salvos em um processo são colocados na entrada 
+de outro processo, por exemplo. 
+Anais WSCAD 2003 
+3.3 Módulo 111 - Extração e Visualização de 
+Estatísticas 
+Em um experimento razoavelmente simples. por 
+exemplo. com oito benchmarks e dez arquivos de 
+configuração (dez valores d iferentes para o mesmo 
+parâmetro). serão fei tas o itenta simulações gerando 
+oitenta arquivos de saída. Então, o usuário que desej ar 
+extrair urna simples estatística destes arquivos precisará 
+abrir o itenta arqui vos. procurar pela estatística c extra ir 
+seu valor. Urna tarefa relativamente árdua. 
+Com a ajuda do Extended SirnMan, através do te rceiro 
+módulo. este trabalho é simplificado. O usuário deve 
+definir onde estão os arquivos de saíd a e o arquivo onde o 
+Extended SimMan deverá escrever os resultados. Aqui , o 
+usuário deverá informar à ferramenta a estatística a ser 
+procurada e extraída no formato em que e la é encontrada 
+no arquivo de saída do sim-outorder. Por exemplo , se o 
+usuário desejar extrair a estatística IPC (Instruções por 
+Ciclo) deverá informar a ferramenta q ue e la deve extrair a 
+estatística sirn_IPC. Para auxiliar o usuário que não está 
+familiari zado com este formato, existe urna tabe la com 
+estas informações presente no 'Help" d a ferramenta. Este 
+módulo pode ser vis to na Figura 8. 
+Ao informar quais arquivos co ntêm os resultados das 
+simulações, o usuano deve definir uma ordem 
+(ascendente/descendente) dos arquivos. Is to é necessário 
+porque a fe rramenta não está apta a saber qua is arqui vos 
+correspondem a qua is pares de benchmarksconfi urações. 
+~- o.,u---------T_,_ _________ _ 
+••-- r.!! - l 1 ,..., I 
+~-- ....... -!. I -·- ....----I - 1- . .w -·- I ... _ 1·-- 3 
+~ 
+r~~...,..... .,_....,... 
+,..,__ .......... 
+I ·' 
+I 
+_!:._j I r·- ,_., I ..... ,_ , 
+.-.ttN: ..... t'tMIN I 
+Figura 8. Extração de estatísticas 
+O usuário ainda deve informar o número de 
+benchmarks, assim a ferramenta irá abrir tantas jane las 
+quanto o número informado, e o usuário deverá selecionar 
+todos os arquivos relativos a cada benchmark, em ordem 
+ascendente/descendente da variação do parâmetro 
+modificado. 
+Na simulação com 2 (dois) benchmarks (bench I , 
+bench2) e 4 (quatro) arquivos de configuração (confl , 
+conf2, conf3, conf4), o usuário deve informar 2 (do is) 
+como o número de linhas. Clicando em 'Browse", a te la 
+61 
+de seleção aparecerá duas vezes. Na primeira vez, o 
+usuário deverá selecionar os arquivos que corrcspondem 
+as seguintes simulações: Simul_Confi_Bcnch I. 
+S imul_Conf2_Bench I , Simul_Conf3_Bench I. 
+Simul_Conf4_Bench I. Na segunda vez. o usuário deve 
+repeti r o mesmo procedimento, mudando Bench I por 
+Bench2. Quando tudo estiver fe ito. e le permite escolher o 
+arquivo de destino e a estatística a ser extraída. 
+Depo is disso, o usuário pode visualizar os resultados 
+em grá fico ou tabe la. E a inda, a tabela pode ser salva no 
+fo rmato CSV e o gráfico pode ser salvo como um arquivo 
+PNG, para futura inserção em um relatório de pesquisa. 
+Para apresentar o gráfico, o Extended SimMan usa o 
+Gnuplo t l5]. A ferramenta permite configura r todos os 
+parâmetros do Gnup lot. como: tipo do gráfico, título e 
+nomes dos e ixos. O usuário pode, inclusive, escolher se 
+todas as curvas estarão em único gráfico ou se cada curva 
+estará em um gráfico. 
+4.CCS 
+CCS (Computing Cemer Software) [8] é um software 
+através do qual é fe ita a submissão de trabalhos do c/uster. 
+Seu objetivo é proporcionar a possibilidade de qualquer 
+usuário, com permissão, a locar e utilizar nodos do c/uster 
+para suas aplicações. O usuário deve informar o número 
+de nodos que deseja e por quanto tempo deseja reservar 
+estas máquinas. O CCS verifica se a solicitação é válida, e 
+em caso positivo, re tornao número da rese rva. 
+CCS, ao realizar as reservas, a loca as máquinas do 
+cluster por nodo e não por processador. Isto é uma 
+caracte rística boa para aplicações distribuídas, mas não 
+muito para a execução de simulações. Porém. o cluster 
+utilizado atende realmente um grande número de 
+aplicações distribuídas, sendo preferido o uso do CCS. 
+Isto não se tornou um problema para a integração, já que o 
+Extended SimMan executa, por exemplo, dois processos 
+de cada vez quando uma máquina é bi-processada, 
+fazendo um bom aproveitamento do hardware disponível. 
+A partir do momento em que o CCS alocou as 
+máquinas, fica autorizada a conexão com os nados por rsh 
+apenas para o usuário requisitante. 
+O CCS mantém arquivos com informações atualizadas 
+do que está se passando no cluster. É deles que o 
+Extended SimMan obtém os dados de que necessita para 
+auxiliar o usuário nas decisões. 
+Os principais comandos CCS, que foram util izados 
+nesta ferramenta são: 
+• ccsalloc: serve para requisitar nodos do c/uster. 
+Devolve o número da reserva. 
+• ccsinfo: apresenta os nomes das máquinas que 
+foram fornecidas para atender à requisição. 
+Possui uma opção para ver a fi la do cluster, com 
+todos os usuários Jogados, q uantos nodos 
+Anais WSCAD 2003 
+utilizados por cada um e quanto tempo de uso 
+ainda resta. 
+• ccsrun : outra forma de executar um comando 
+remoto no nodo. 
+5. Integração Extended SimMan - CCS 
+O Extended SimMan facilita o trabalho do pesquisador 
+de arquiteturas de computadores. mantendo-o alheio ao 
+tratamento de todos os arqui vos envolvidos. Também 
+verifica o andamento das execuções dos processos nas 
+diversas máquinas para poder disparar novos. Além disso, 
+um outro fator relevante que moti vou este trabalho é o 
+tempo que estas simulações levam. O ideal é utilizar o 
+maior número de máquinas possível quando se tem um 
+experimento envolvendo muitas simulações. Uma solução 
+é a utilização dos nodos do cluster. 
+É uma opção a mais para o usuário executar suas 
+simulações. e uma boa solução no que diz respeito à 
+duração do experi mento, caso vários nodos estejam livres. 
+Ao nível de implementação, o que o Extended SimMan 
+faz é acessar os arquivos com os dados atualizados do 
+cluster e oferecer ao usuário as opções de máquinas e 
+tempos disponíveis. 
+O que o usuário deve fazer é selecionar os arquivos de 
+configuração e benchmarks, assim como um diretório para 
+depositar os arquivos de resultados, e deve também 
+indicar quantos dos nodos disponíveis deseja utilizar. 
+Depois é só aguardar enquanto a ferramenta segue 
+disparando as simulações até ter concluído todas. 
+6. Validação da Ferramenta 
+Para validar a ferramenta, atestando que todas 
+funcionalidades estão trabalhando como esperado, alguns 
+testes foram feitos. Como a ferramenta foi desenvolvida 
+em módulos, cada módulo teve seu próprio teste. Alguns 
+resultados de um módulo foram usados como ponto de 
+partida para os seguintes. 
+No módulo I, alguns arquivos de configuração foram 
+gerados. Todos eles foram testados com o simulador simoutorder, sendo submetidos à checagem sintática. Todas 
+as combinações de possibilidades entre configurações de 
+coches e previsores de desvio fo ram testadas, e todas 
+passaram pela checagem sintática feita pelo sim-outorder. 
+Além disso, múltiplos arquivos foram gerados, 
+analogamente a uma simulação real, sendo usados na 
+validação dos outros módulos. 
+Para fazer a validação do segundo módulo, foi definida 
+uma simulação similar a uma que j á havia sido executada 
+em [li]. Para realizar isto, os mesmos benchmarks (seis) e 
+as mesmas configurações (onze, geradas pelo módulo I) 
+foram usados. Nesta simulação oito máquinas foram 
+usadas, onde quatro delas são biprocessadas e foram 
+62 
+usadas com conexões rsh (Dual Pentium Pro Cluster): no 
+restante foram usadas conexões ssh e elas eram apenas 
+estações de trabalho com Pentium III. Todas as máquinas 
+tinham GNU/Linux corno sistema operacional. Ambas as 
+conexões rsh e ssh foram feitas com sucesso sem nenhum 
+problema decorrente delas. Os arquivos de resultados das 
+simulações foram muito similares àque les da simulação 
+anterior (os resultados do sim-outorder podem ser 
+diferentes quando é usada uma máquina local diferente). 
+Finalmente, no módulo 111, as estatísticas que haviam 
+sido retiradas manualmente no trabalho c itado ac ima. 
+foram. agora, extraídas com o auxíl io da ferramenta. A 
+extração permitiu a geração dos mesmos grálicos. como 
+era esperado. Na Figura 9.a, o formato do arquivo de 
+saída pode ser visto. O usuário, neste caso, informou que 
+o número de linhas deveria ser seis, representando o 
+número de benchmarks, ficando o número de colunas 
+igual a onze, que é número de arquivos de configuração 
+(como explicado na seção anterior). Na Figura 9.b os 
+respectivos gráfico e tabela podem ser vistos. 
+o , ,.,J66 0 . 5~31 •>. S6~7 u . ss r.~ 0 . 60 11 0 . 6 1.;6 o. C2S3 o . oo~. o. 62!9 u . <-tl1(1 o.soet 
+l.IJSH 1. 1361 1. 221.; 1. .33~~ l.~HS 1. 622U l.&hl 2 . Q!JH .l . 351 -' 1 . 7021 2 . ~772 
+o . q9"0 1.01.;s l.IH~ L2"101 1.~02' 1. 5!16-t l. 1:t<~ .. , l. ~f·~~. 4 . L911f: 2 . H9':t .l . <t6t.; 
+l. 21l12 l. 2J;<S 1. 293.; l.3J;11 l.J; OJ; <t l."10 1 t. 560fl 1. (1)30 1. 7170 l. Cf111 l . OE-0" 
+l.Oti '\1 1.1~18 1. 2.; 2<~ 1.3.;2~ l."i!lf'1 J.591~ l. if3q l. CfHiti 1 . 2 I.; ,l L . J;9Qr, 4 . 7lf!ir 
+O. HtH O, q),Sj l. U2J;!i 1.133l) 1. 26&0 I. J;399 1. 660 l. (j1qJ; 2 . " 311 3 . 12•:tt> j . 86~1 
+Figura 9.a - Saída gerada pelo módulo 111 
+--(><) 
+····-- .. " 
+~· '"" 
+OUJI 
+t t»U ,,,., 
+~ ' "" 
+f 
+1:0r: I :·4~ 
+"'" I Utl . .... O"))J 
+M:,;- !, ... ;, .... 
+Figura 9.b - Gráfico e tabela gerados a partir dos 
+resultados apresentados na Figura 9.a 
+Quando é utilizado um cluster e não as máquinas de 
+urna rede, o procedimento é o mesmo depois de alocados 
+os nodos. A ferramenta utiliza o comando rsh para 
+atualizar e disparar novos processos exatamente como no 
+outro caso. 
+7. Conclusões 
+Neste artigo, fo i apresentado Extended SimMan 
+integrado com CCS. Esta ferramenta de auxílio à 
+simulação é um f ront-end gráfico para os simuladores do 
+SimpleScalar Tool Set, permitindo a gerência da 
+configuração e execução das simulações, bem como a 
+geração do gráfico dos resultados. 
+Como dito antes, a tarefa da simulação não é trivial. 
+Em qualquer análise de arquitetura, há muitas variáveis a 
+Anais WSCAD 2003 
+serem alteradas, retletindo em vanos arquivos de 
+conliguração desta arquitetura especílica. Além disso, é 
+necessário analisar a arquitetura sob diferentes cargas de 
+trabalho. Isto se rctlete no uso de diversos benchmarks. 
+Por exemplo. num estudo que usa doze diferentes 
+arquivos de configuração e oito benchmarks dist intos. 96 
+(noventa e seis) execuções se farão necessárias. É preciso 
+disparar e controlar processos em diversas máquinas para 
+reduzir o tempo de simulação. Se houver três máquinas 
+disponíveis, o usuário precisa acessá-las c disparar os 
+processos um a um. O usuário também poderia disparar 
+mais de um processo por máquina. o que tornaria a 
+máquina muito lenta, já que os simuladores são CPU 
+bmmd. Logo, o usuário precisa monitorar estes processos 
+para ter certeza de que a simulação prévia está terminada, 
+para então disparar uma outra. Outro grande problema é a 
+extração de estatísticas. Neste caso, são 96 arquivos de 
+resultados que devem ser abertos e analisados em busca 
+da estatística desejada. 
+Através da ferramenta apresentada neste trabalho, este 
+processo é automatizado. Ela encobre vários outros 
+softwares necessários à realização e análise das 
+si mulações (sim-outorder, CCS, Gnuplot), deixando esta 
+parte trabalhosa e custosa em questão de tempo e esforço 
+transparente ao usuário. O usuário somente precisa 
+configurar sua simulação e a ferramenta faz todos os testes 
+c execuções, informando quando terminar. Para extrair 
+estatísticas, ele precisa conhecer apenas quais arquivos 
+contêm as informações dos resultados e onde e les estão 
+localizados. Com estes dados, a ferramenta extrai as 
+estatísticas. estando preparada para exibir os respectivos 
+grálico e tabela, e salvá-los. 
+Os simuladores SimpleScalar são empregados por 
+pesquisadores de todo mundo no projeto de arquitetura de 
+processadores. Extended SimMan vem facilitar o trabalho 
+destes e de alunos, acelerando o processo das medidas e 
+testes de desempenho de novas arquiteturas. Os 
+pesquisadores, perdendo menos tempo com o processo de 
+simulação, poderão voltar seus esforços numa maior 
+análise dos resultados. 
+8. Referências 
+[I] Austin, T. M. A User's and Hacker's Guide to lhe 
+SimpleScalar Architectural Research Tool Set. Intel 
+MicroComputer Research Labs. January 1997. 
+[2] Burger, D.; Austin. T. M. The SimpleScalar Tool Set: 
+Version 2.0. Madison: University of Wisconsin. 1997. 
+(Technical Report, n.l342). 
+[3] Free Software Foundation Gawk. 
+http://www.gnu.org/software/gawk/ 
+[4] Free Software . Foundation Bash. 
+http://www.gnu.org/softwarelbash/ 
+[5] GnuPiot - http://www.ucc.ie/gnuplotlgnuplot.html 
+63 
+[6] Gonçalves, R. A. L.: Ayguadé. E.: Valero. M.: Navaux, 
+P.O.A. A Simu lator for SMT architcctures: Evaluating 
+lnstruction Cache Topologies. XII SBAC-PAD. Octob~:r 2000. 
+[71 Johnson. M. Superscalar Microprocessor Design. Englcwood 
+CliiTs. Ncw Jerscy: Prentice Hall. 199 1. 288p. Scrics in 
+lnnovative Technology. 
+[81 Keller. A. OpenCCS Administrator Manual. Alemanha: 
+Paderborn Centcr for Parallcl Computing: v0.8. I 14p, Outubro. 
+2002. 
+[91 Kylix- Borland. http://www.borland.com/kylix/index.htrnl 
+[ 10) MIPS. RIOOOO Microproccssor User's Manual: Version 
+1.0. Mountain View. California: MIPS T~:chnologies. 1995. 
+L li] Pizzol. G. D.: Pilla. M. L.: Navaux. P. O. A. Branch 
+Prediction X Performance: An Analisys on SupcrScalar 
+Processors. IN: XIII SBAC-PAD. October 2001. 
+[ 12] Srnith, J.E.: Sohi. G.S. The Microarchitccture o f 
+SupcrScalar Processors. Proc~:cdings of thc IEEE, [S.I.j. v.83, 
+n. l 2. Dcc. 1995. 
+[ 13] Sugumar. R. A.: Abraham, S. G. Eflicicnt Simulation of 
+Caches under Optirnal Replaccmcnt with Applications to Miss 
+Characterization. IN: ACM SIGMETRICS CONFERENCE ON 
+MEASUREMENT ANO MODELING OF COMPUTER 
+SYSTEMS. Proceedings.. pp. 24-35. May 1993. 

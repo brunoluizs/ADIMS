@@ -1,0 +1,37 @@
+Amostra (AM)	            amostra
+Desvio Padrão (DP)	        desvio padrão
+D.Normal/Gaussiana (DN) 	distribuição normal OR gaussiana
+Intervalo de Confiança (IC)	intervalo de confiança
+Média (ME)	                média
+Num. Execuções (NE)     	número de execuções
+Num. Iterações (NI)     	numero de iterações
+Teste/Experimento (TE)  	teste OR experimento OR simulação
+Variância (VR)	            variância
+
+Bandwidth (BW)	            bandwidth OR largura de banda
+BPS (BP)	            	bits por segundo OR bps
+Capacidade Nominal (CN)	    nominal capacity OR capacidade nominal
+Capacidade Utilizável (CU)	usable capacity OR capacidade utilizável
+Confiabilidade (CO)     	Reliability OR Confiabilidade
+Cost/Perfornace Ratio (CP)	cost ratio OR performance ratio
+Disponibilidade (DI)    	availability OR disponibilidade
+Downtime/Uptime (DU)    	downtime OR uptime
+Eficiência/Acurácia (EA)	eficiência OR eficácia OR accuracy
+Fator de Estiramento (FE)	strech factor OR fator de estiramento
+Tempo Ocioso (TO)       	Idle time OR tempo ocisoso
+MFLOPS (MF)	            	MFLOPS
+MIPS (MI)	            	MIPS
+MTTF (MT)	            	MTTF
+PPS (PP)	            	PPS
+Speed up (SU)	            speed?up
+Tempo de Reação (TR)	    reaction time OR tempo de reação
+TPS (TP)	            	TPS
+
+P-Valor (PV)	            p-valor OR p-value OR valor p
+Teste ANOVA (AN)	        anova
+Teste Chi-quadrado (CH)     chi-quadrado OR qui-quadrado
+Teste de Wilcoxon (TC)	    wilcoxon signed-rank
+Teste Exato de Fisher (FI)	teste exato de fisher OR fisher
+Teste Kruskal-Wallis (KR)	kruskal-wallis
+Teste T (TT)	            teste de student OR t-student OR t de student OR student OR teste[ -]?t
+Teste U (TU)	            teste U OR mann-whitney OR wilcoxon rank-sum

@@ -1,0 +1,558 @@
+Scanned Document
+IX Simpósio em Sistemas Computacionais 143 
+Verificação em Hardware de Componentes de Comunicação 
+Maikel L. Kolling, Felipe A. Kuentzer, Cristiano Battisti, 
+Cristiano B. Both, Rafael R. dos Santos, Tatiana G. S. dos Santos 
+Departamento de Informâtica 
+Universidade de Santa Cruz do Sul (UNISC) 
+maikel@unisc. br, {f e li pekuentzer, cristiano bat tis ti }@mx2. unisc. br, 
+{ cboth, rsantos, tatianas }@unisc. br 
+Resumo 
+Nas últimas décadas, a transformação nos meios 
+e formas de comunicação vêm impulsionando uma 
+grande diversificação de dispositivos na área de comunicação de dados. Essa transformação é possível, sobretudo, em decorrência do desenvolvimento da microeletrônica e dos sistemas embarcados. Apesar da grande 
+evolução ocorrida nos equipamentos em si, ainda existe 
+uma carência no que diz respeito aos testes e validações 
+dos mesmos. Várias RFCs (Request for Comments) já 
+foram escritas objetivando a definição de uma metodologia para benchmarking, mas a maioria são tipicamente implementadas através de software e os equipamentos para esse fim, disponíveis no mercado, possuem 
+um alto custo agregado. Porém, com a necessidade 
+crescente de aumento da vazão, muitos desses testes 
+ficam restritos, já que o software não consegue atingir 
+os requisitos de vazão e latência necessários. Assim, 
+esse trabalho tem como principal objetivo implementar os testes descritos na RFC 2544 em hardware. Os 
+resultados mostram que essa abordagem é bastante eficiente e flexível, tendo em vista que não é necessário 
+o uso de um sistema operacional e aplicativos de alto 
+nível. 
+1 Introdução 
+Atualmente, as redes de computadores 
+transformaram-se em redes de informações que 
+oferecem comunicação de dados, voz e vídeo, conhecidos como serviços triple play. As pessoas necessitam 
+obter e trocar qualquer tipo de informação, a qualquer 
+momento, em qualquer lugar. Isso alavanca o crescimento de provedores de serviço que oferecem conexões 
+de banda larga. As tecnologias que são utilizadas para 
+prover conexões, em geral, possuem um alto custo 
+de implantação e necessitam constantemente serem 
+atualizadas, tornando crescente a.diversificação desses 
+dispositivos. 
+Essa diversificação, embora importante na pesquisa 
+e desenvolvimento de novos equipamentos, torna a padronização de procedimentos e protocolos uma necessidade comum na área. Assim, os fabricantes baseiam 
+o desenvolvimento em normas, que descrevem as características técnicas dos dispositivos e protocolos de 
+comunicação e garantem a conformidade dos equipamentos. Tipicamente, diversas normas e padrões são 
+utilizados em todas as etapas do desenvolvimento, descrevendo os diversos níveis em que dada aplicação deve 
+ser implementada. 
+Em decorrência da grande diversificação e do número de normas envolvidas, o desenvolvimento de testes de validação não é uma tarefa trivial. Atualmente 
+os equipamentos de testes existentes no mercado possuem preços muito elevados. Conscientes desta carência em equipamentos de validação e na intenção de reduzir custos, muitos fabricantes validam e testam de 
+forma manual e pouco detalhada apenas um pequeno 
+percentual de sua produção. Uma validação por amostragem pode vir a mascarar algumas características 
+técnicas dos dispositivos que não passaram por testes 
+de conformação e desempenho (7] . 
+Dentro desse contexto, inúmeras RFCs já foram descritas com a finalidade de formalizar os procedimentos 
+de validação dos dispositivos de comunicação. Entre 
+essas RFCs disponíveis, a RFC 2544 (6J, estabelece um 
+conjunto de testes que devem ser utilizados para melhor validar as características de desempenho de equipamentos de comunicação. Essa RFC, também, descreve como os equipamentos devem ser testados e como 
+os resultados devem ser apresentados. 
+No entanto, nem todos os testes propostos são aplicáveis aos diversos tipos de dispositivos de comunicação, por não serem suportados pelo mesmo ou a sua 
+144 
+irrelevância no escopo do dispositivo. Portanto, a seleção dos testes a serem utilizados na avaliação é de 
+extrema importância. Adicionalmente, é fundamental 
+um cuidado especial na análise dos resultados obtidos, 
+exigindo uma repetição dos testes para uma futura validação estatística dos números obtidos [11]. 
+Muitos testes propostos pela RFC 2544 são implementados em software. Porém, por necessitarem de um 
+sistema operacional e serem executados como aplicação 
+em um hardware não dedicado possuem desempenho limitado. Com essa motivação, este trabalho apresenta 
+o projeto, implementação e validação de um protótipo 
+em hardware para testes em redes Ethernet, baseado 
+em um subconjunto proposto pela RFC 2544. A arquitetura desenvolvida possui blocos destinados a executar funções de geração de quadros Ethernet implementados em dispositivos reconfiguráveis do tipo FPGA 
+(Field Programmable Cate Arrays), permitindo uma 
+prototipagem rápida e de baixo custo através de uma 
+linguagem de descrição de hardware (10). 
+Esse trabalho está organizado da seguinte forma: a 
+Seção 2 mostra os trabalhos correlatos, enquanto que 
+a Seção 3 apresenta maiores detalhes sobre os testes 
+abordados e propostos pela RFC 2544. A Seção 4, por 
+sua vez, apresenta o modelo da arquitetura de testes 
+proposta e a Seção 5 mostra o ambiente utilizado nos 
+experimentos efetuados. As Seções 6 e 7 apresentam, 
+respectivamente, os resultados e as conclusões da pesquisa. 
+2 Trabalhos Correlatos 
+Apesar da grande quantidade de equipamentos de 
+interconexão oferecidos no mercado, existe uma carência em equipamentos destinados a testes e validações 
+para estes dispositivos. Normalmente, os equipamentos 
+disponíveis implementados em hardware são extremamente caros. Os softwares disponíveis, por sua vez, não 
+atingem as taxas requeridas por redes de alto desempenho. Desse modo, esse trabalho busca suprir essa 
+necessidade mercadológica. 
+Um grande número de softwares foram desenvolvidos com a função de medir o desempenho em dispositivos de comunicação, destacando-se dentro dessa classe 
+de softwares o Netperf [3) e o Iperf [2). No entanto, esses softwares implementam apenas alguns dos diversos 
+testes propostos pelas RFCs. 
+O software Netperf é uma ferramenta que foi desenvolvida pela Hewlett-Packard (HP), sendo que posteriormente teve seu código disponibilizado para a comunidade de software livre e atualmente possui versões para 
+diferentes tipos de sistemas operacionais, entre eles Linux e Windows. O Netperf pode ser usado para medir 
+29 de Outubro a 1 o de Novembro de 2008 
+inúmeros aspectos relevantes ao desempenho das redes 
+de computadores, tais como vazão, latência e perda de 
+quadros. 
+A principal característica desse software é a capacidade de realizar testes de transferência de grandes 
+quantidades de dados, juntamente com a medição de 
+desempenho de envio e recebimento de quadros. Assim, a ferramenta consegue medir a taxa máxima de 
+transferência de dados do dispositivo em teste. 
+Para realizar estes testes o aplicativo envia durante 
+10 segundos rajadas contínuas de dados entre origem e 
+destino, de acordo com configuração pré-determinada. 
+Após, a ferramenta calcula o tempo gasto para enviar 
+quadros de tamanhos fixos entre os dois nós que estão sendo analisados. Através do tempo de envio e do 
+tamanho dos quadros enviados é possível determinar 
+qual a banda total disponível. Das ferramentas analisadas, o Netperf apresentou resultados mais precisos e 
+por isso foi utilizada nesse trabalho, na etapa de validação, como será visto nas próximas seções. 
+Por outro lado, o número de dispositivos desenvolvidos em hardware destinados a testes de equipamentos de comunicação é bastante reduzido em relação 
+aos softwares para esse mesmo fim. Os dispositivos 
+em hardware de testes são normalmente utilizados em 
+grandes empresas, em decorrência de seus preços muito 
+elevados. Estes dispositivos, contudo, alcançam uma 
+maior precisão nas medições de desempenho. 
+Um exemplo de dispositivo de teste é o Frame Scope 
+Pro. Este equipamento, desenvolvido pela Agilent [4] , 
+é portátil e destina-se a testes em dispositivos de comunicação de alto desempenho, suportando taxas de 
+transmissão entre 10/ 100/1000 Mbitf s. Esse trabalho, 
+assim como o Frame Scope Pro, têm como objetivo 
+testar componentes de interconexão. Porém, com um 
+custo reduzido e com a possibilidade de realizar testes com caracteríticas diferentes do padrão Ethernet, 
+como por exemplo gerar quadros com tamanhos menores e maiores para testar o comportamento de um dispositivo de interconexão. Esta possibilidade é devido a 
+camada MAC (Media Access Control) estar implementada em um FPGA. 
+Outra pesquisa destinada ao estudo e integração de 
+tecnologias em hardware e redes, diz respeito ao projeto NetFPGA [8). Esse projeto, que possui um aspecto educacional, oferece uma plataforma em hardware específica para desenvolvimento de sistemas de 
+comunicação de dados. Essa iniciativa prova o quanto 
+essa área está em desenvolvimento e expansão. A plataforma NetFPGA, porém, não foi utilizada pois ela 
+foi projetada de modo que a placa de desenvolvimento 
+seja interligada em um PC hospedeiro através do barramento PCI. Essa pesquisa, no entanto, busca o deIX Simpósio em Sistemas Computacionais 
+senvolvimento de uma placa independente de outros 
+equipamentos. 
+3 Descrição dos Testes Abordados pela 
+RFC 2544 
+Quando o objetivo é a avaliação de equipamentos 
+de comunicação, existem duas abordagens passíveis de 
+serem realizadas: os testes de desempenho e os testes 
+de conformidade. Os testes de conformidade têm como 
+objetivo comprovar as reais características técnicas de 
+um dispositivo de comunicação. Já os testes de desempenho visam quantificar o desempenho do equipamento 
+em diferentes cenários de utilização. Com estas duas 
+abordagens é possível analisar diferentes equipamentos 
+e determinar qual é o mais indicado para um determinado cenário [6]. 
+A RFC 2544 propõe e define os testes que podem 
+ser utilizados para descrever e comparar as características de desempenho dos dispositivos de interconexão 
+de rede. Além disso, essa RFC informa o formato que 
+os resultados dos testes devem ser apresentados. Essa 
+seção apresenta e discute brevemente um sub-conjunto 
+de testes de desempenho, descritos pela RFC 2544 e 
+que fazem parte dos objetivos desse trabalho. São eles: 
+1. Throughput (Vazão): A vazão é definida pela RFC 
+como sendo a quantidade máxima de dados que 
+pode ser transportada da origem ao destino. Em 
+qualquer sistema que utiliza o padrão Ethernet, 
+a vazão máxima teórica é igual à taxa de dados, 
+ou seja, 10 Mbit/ s, 100 Mbit/ s ou 1000 Mbitfs. 
+Na prática essas taxas não podem ser alcançados 
+devido ao IFG (Inter Frame Gap) , preâmbulo e 
+SFD (Start Frame Delimiter) . A vazão máxima, 
+chamada neste trabalho de Vazão Ideal, é a quantidade de quadros que pode ser enviada por segundo, considerando o IFG, preâmbulo e SFD. 
+O teste de vazão é realizado através do envio de 
+um determinado número de quadros com tamanho específico e uma taxa de transmissão prédeterminada. A RFC 2544 define que os quadros 
+devem ser do tipo UDP ( User Datagram Protocol) 
+com tamanho entre 64 e 1518 bytes. A mesma 
+RFC recomenda que valores para o tamanho do 
+quadro sejam de 64, 128, 256, 512, 1024, 1280 e 
+1518 bytes. Em seguida, os quadros corretamente 
+recebidos devem ser contabilizados. Se a quantidade de quadros recebido for menor que a quantidade de quadros transmitido uma menor taxa de 
+transmissão deve ser selecionada e o procedimento 
+de teste repetido. 
+145 
+2. Latency (Latência) : O teste de latência diz respeito ao tempo total que o último bit de um quadro demora para chegar da origem ao destino. Entretanto, a origem e destino devem estar sincronizados. Esse tempo total é a soma dos atrasos do 
+processamento nos elementos da rede somando ao 
+atraso de propagação ao longo do meio de transmissão. Para medir a latência, a vazão deve ser inicialmente determinada, para todos os tamanhos de 
+quadros definidos pela RFC. Posteriormente, uma 
+série de quadros de teste, no mínimo 20 quadros, 
+contendo uma primeira marca de tempo devem ser 
+transmitidos pela rede. A marca de tempo é então verificada, pelo equipamento testador, no momento que os quadros são recebidos. Em seguida, 
+é adicionada uma segunda marca de tempo nestes 
+quadros. A latência pode ser calculada fazendo a 
+diferença entre as duas marcas de tempo de cada 
+quadro recebido. Uma outra forma de realizar o 
+cálculo de latência é fazer com que os quadros de 
+teste retornem ao equipamento testador através de 
+um loop. O atraso é calculado utilizando-se a metade do valor sobre a diferença do tempo de ida 
+e volta de cada quadro. Segundo a RFC 2544, a 
+latência deve ser apresentada em microsegundos 
+(!-Ls) , por isso, todos os tempos apresentados neste 
+trabalho utilizam essa grandeza. 
+3. Frame Loss Rate (Perda de Quadros): O teste de 
+perda de quadros, por sua vez, é definido como 
+sendo o número de quadros que foram transmitidos pela origem e não foram recebidos no destino. 
+A avaliação de perda de quadros é importante para 
+que seja verificado o comportamento do dispositivo testado em condições de sobrecarga da rede. 
+Um exemplo dessa sobrecarga é quando são geradas rajadas excessivas de quadros em broadcast na 
+rede. 
+O cálculo para taxa de perda de quadros é expresso 
+em forma de porcentagem do número total de quadros transmitidos e segue uma equação fornecida 
+também pela RFC. O procedimento para o teste 
+resume-se na transmissão de rajadas constantes de 
+quadros para cada taxa de vazão encontrada nos 
+diferentes tamanhos de quadros. A primeira rajada de quadros é de 100% da vazão de cada tamanho de quadro, a segunda rajada de é 90% e assim 
+sucessivamente até que chegue aos 10%. Então, as 
+taxas de perda são calculadas para cada porcentagem de rajadas enviadas no teste realizado. 
+4. Back-to-Back Frames: O teste de back-to-back 
+frame diz respeito ao tamanho máximo de quadros contínuos que um dispositivo consegue tra146 
+tar sem ter perdas de quadros ocasionadas por estouro de memória. Segundo a RFC 2544, o teste 
+resume-se em enviar ao dispositivo uma rajada de 
+quadros com um mínimo de espaço entre cada quadro. Tanto os quadros enviados como os quadros 
+retornados devem ser contabilizados. Se o número 
+de quadros recebidos for igual ao número de quadros transmitidos, é aumentada a duração da rajada e o teste é realizado novamente. Se o número 
+de quadros recebidos for menor do que o número 
+transmitido, a duração da rajada é reduzida sendo 
+realizado novamente o teste. 
+5. System Recovery (Recuperação do Sistema): O 
+procedimento definido como System recovenJ, por 
+sua vez, tem como objetivo quantificar a velocidade que o dispositivo em teste reage a uma situação de sobrecarga de quadros. Ainda de acordo • 
+com a RFC 2544, uma rajada de quadros com 
+cerca de 110% da vazão encontrada para cada tamanho de quadro deve ser enviada ao dispositivo 
+em teste. Esses quadros devem ser enviados durante pelo menos 60 segundos, provocando assim 
+um estouro de memória no dispositivo a ser testado. Assim que ocorrer o estouro de memória, o 
+dispositivo em teste deverá parar de responder e 
+então um tempo inicial de referência deve ser marcado. Após a marcação deste tempo inicial, uma 
+nova rajada de quadros deve ser enviada ao dispositivo, porém a taxa de dados deve ser reduzida em 
+50%. Uma nova marca de tempo deve ser registrada assim que o dispositivo voltar a responder 
+aos quadros enviados. O tempo total necessário 
+para que o dispositivo responda normalmente em 
+caso de sobrecarga de dados é calculado subtraindo 
+o tempo inicial pelo tempo final . O teste deve ser 
+realizado algumas vezes para que uma amostragem 
+estatística confiável seja coletada. 
+6. Reset (Reinicialização): Finalmente, o teste de reset tem como objetivo determinar o tempo necessário para o dispositivo em teste recuperar-se 
+de uma reinicialização por hardware ou por software. O procedimento para o t este resume-se em 
+transmitir um fluxo continuo de quadros ao dispositivo em teste. Em seguida, uma reinicialização 
+por hardware ou por software no dispositivo em 
+teste deve ser efetuado, registrando-se como tempo 
+inicial o momento em que o último quadro foi recebido pelo equipamento testador. Assim que o 
+equipamento testador passar a receber novamente 
+os quadros do dispositivo em teste deve ser registrado outra marca de tempo. A diferença entre as 
+duas marcas de tempo resultam no tempo que foi 
+29 de Outubro a 1° de Novembro de 2008 
+necessário ao dispositivo em teste se recuperar de 
+uma reinicialização por hardware ou por software. 
+Para a validação da arquitetura desenvolvida este 
+artigo apresenta um estudo de caso dos testes de vazão e latência, entre o grupo de testes definidos pela 
+RFC 2544. A escolha foi devido aos testes serem os 
+mais importantes para garantia de qualidade de serviço e para verificação da capacidade de transmissão 
+do equipamento testado. 
+4 Arquitetura d e Testes Proposta 
+Um sistema embarcado é um conjunto computacional dedicado que especializado e usa seu poder de 
+processamento exclusivamente para a função a qual foi 
+projetado. A utilização de dispositivos embarcados em 
+plataforma do tipo FPGA mostra-se uma alternativa 
+extremamente viável na implementação dos t estes de 
+vazão e latência, proposto pela RFC. Um FPGA é um 
+dispositivo lógico programável de alta capacidade, chegando a integrar, em uma única pastilha de silício, milhares de células lógicas, além de núcleos de processamento RISC e memória RAM. Essas características, 
+disponíveis nos atuais FPGAs, permitem uma implementação e prototipagem rápida com o uso de uma 
+linguagem de descrição de hardware. 
+Desse modo, a arquitetura do ambiente de testes 
+proposta, por esse trabalho, segue o fluxo de implementação em hardware através da tecnologia FPGA usando 
+a linguagem VHDL ( VenJ High Speed Integrated Circuit 
+Hardware Description Language). As demais etapas de 
+desenvolvimento como codificação, simulação, síntese, 
+prototipação e validação foram assistidas por ferramentas automáticas disponibilizadas pela Xilinx [5) e Mentor Graphics [1). Nas etapas de descrição, validação 
+de código, síntese e geração de bitstream foi ut ilizado 
+o ambiente de desenvolvimento Xilinx Integrated Software Environment (ISE) versão 9.1i, enquanto que a 
+simulação e análise de cobertura foram efetuadas através da ferramenta ModeiSim da Mentor Graphics. 
+A arquitetura proposta possui três componentes integrados ao Soft Core MAC da empresa DATACOM 
+(9] , responsável pela comunicação com o meio físico 
+(PHY). O Soft Core MA C possui dois núcleos que 
+desempenham o papel do protocolo MAC para redes 
+Ethernet, capazes de suportar taxas de transmissão de 
+10/ 100 Mbit/s e 1000 Mbit/ s, respectivamente. Um 
+terceiro núcleo possui a finalidade de prover enlace com 
+o meio físico de fibra óptica. Esse Soft Core MA C, chamado no restante desse trabalho de MAC, é responsável 
+pela implementação em hardware do subnível MAC do 
+padrão Ethernet. Assim, a arquitetura desenvolvida 
+IX Simpósio em Sistemas Computacionais 
+que realiza a validação e testes de equipamentos de comunicação de dados é composta, por um gerador de 
+quadros, um monitor de quadros e um gerador de reset. A arquitetura completa pode ser visualizada na 
+Figura 1. 
+Monitor de Quadros 
+(MONITOR) 
+Figura 1. Diagrama em bloco da arquitetura 
+desenvolvida 
+A versão inicial desse sistema prevê um ambiente de 
+testes para redes Ethernet usando o MAC da DATACOM configurado para taxas de transmissão de 10/ 100 
+Mbit/s, half-duplex e full-duplex, seguindo o padrão 
+IEEE 802.3. É importante salientar que a versão para 
+taxas de transmissão de 1 Gbit/ s já está em implementação. Porém, a arquitetura de testes é a mesma em 
+ambas as situações. 
+Para a realização de testes é necessário a criação de 
+um mecanismo que possui a função de gerar e gerenciar 
+as operações básicas para o envio de quadros. Para isso, 
+foi projetado o módulo gerador de quadros chamado 
+PKTGEN. Esse componente possui a lógica necessária 
+para o envio de quadros de diferentes tamanhos e características, seguindo as orientações da RFC 2455. O 
+PKTGEN gerencia os sinais de controle do MAC e a 
+captura das informações geradas pelo módulo monitor 
+de quadros, informações que são incluídas nos quadros 
+a serem transmitidos. A parte de controle é composta 
+por uma máquina de estados, dividida em 5 estados, 
+que têm por função interpretar os sinais originados do 
+MAC e do módulo contador, para alternar entre seus 
+estados. Através desta lógica é definindo a seqüência e 
+forma de como os quadros são gerados. 
+O monitoramento de quadros, por sua vez, é responsabilidade do componente MONITOR. Esse módulo têm a função de identificar e contabilizar o número 
+147 
+de quadros recebidos pelo MAC. Adicionalmente, esse 
+bloco é responsável por implementar a lógica necessária 
+para a captura das informações estatísticas já previstas no bloco MAC e por enviar os dados contabilizados 
+para o bloco gerador de quadros. 
+A parte funcional resume-se em capturar as informações disponibilizadas pelo módulo estatístico do MAC 
+e em cada ciclo contabilizar estes dados, incrementando 
+os contadores que são disponibilizados para o módulo 
+gerador de quadros. Outra função deste componente 
+é capturar e disponibilizar ao módulo gerador de quadros, a posição de 4 chaves do tipo dip switch que determinam o tamanho do quadro a ser gerado. 
+O último bloco é responsável pela inicialização e sincronização dos demais blocos. Este componente contém a lógica necessária para a geração dos sinais de 
+reset que são utilizadas no bloco gerador de quadros, 
+MAC e MONITOR. 
+5 Metodologia Experimental 
+Essa Seção apresenta a metodologia para a validação 
+do protótipo desenvolvido, que tem como objetivo analisar a conformidade e o desempenho de um dispositivo 
+Ethernet. Após a completa implementação e validação 
+do sistema, o trabalho voltou-se para os casos em que 
+a arquitetura aqui proposta seria utilizada. Esses casos, aqui identificados como Cenários para Testes do 
+Protótipo, serão discutidos na próxima Subseção. 
+O protótipo desenvolvido para testar equipamentos 
+de comunicação, no padrão IEEE 802.3, possui quatro 
+características fundamentais , importantes para a validação de suas funcionalidades. São elas: 
+• Capacidade de gerar tráfego com a taxa máxima 
+de vazão, definido pela RFC 2544. 
+• Capacidade de gerar tráfego com tamanhos definidos pela RFC 2544. 
+• Capacidade de gerar quadros nos formatos especificados pela IEEE 802.3. 
+• Capacidade de medir quadros transmitidos e recebidos. 
+Desse modo, cada uma dessas · características foram verificadas tanto através da validação funcional, 
+como através da validação do protótipo após a síntese. 
+Como já mencionado anteriormente, a etapa funcional 
+foi realizada através do software ModelSim da Mentor 
+Graphics. A parte de verificação já na placa, foi realizada através do software ChipScope da Xilinx. 
+Um exempló de uma validação funcional com um 
+quadro de tamanho mínimo constituído por: 7 bytes de 
+148 
+preâmbulo, 1 byte de SFD, 6 bytes do endereço MAC 
+de origem, 6 bytes do endereço MAC de destino, 2 bytes 
+do tipo ou tamanho de quadro, 46 bytes de dados, 4 
+bytes de checksum e mais o intervalo entre os quadros 
+(IFG) de 12 bytes, totalizando um total de 84 bytes. 
+Sendo a freqüência de operação do bloco PKTGEN de 
+12,5 MHz, cada ciclo possui um período de 8. 104J.Ls, 
+dessa forma, um quadro mínimo de 64 bytes deve ser 
+enviado em 84 ciclos de 8.104 J.LS, totalizando um tempo 
+de 6, 72.106J.Ls. 
+5.1 Cenários para Teste do Protótipo 
+Para finalizar a validação do protótipo foram realizados três diferentes grupos de testes. Primeiramente, 
+realizou-se testes utilizando o software Netperf com o 
+objetivo de analisar o desempenho alcançado em testadores implementados em software, para posteriormente 
+compará-los com o protótipo desenvolvido. O segundo 
+grupo de teste foi projetado com o objetivo de validar a 
+capacidade máxima de geração de quadros pelo protótipo, isoladamente. Finalmente, o terceiro grupo teve 
+a finalidade de analisar a vazão máxima e a latência 
+alcançada em equipamentos de rede, demonstrando a 
+eficiência do equipamento projetado. 
+Os recursos utilizados para a geração dos testes foram os seguintes: 
+• dois computadores Itautec com processador Athlon XP 1.8 Ghz, com 256MB de memória RAM, 
+placa de rede 10/ 100 Mbits/s onboard e sistema 
+operacional Linux; 
+• swicht 10/ 100, iniciado com as configurações de 
+fábrica, com 24 portas padrão Ethernet, 64 Mb de 
+memória; 
+• analizador de protocolo Wireshark para capturar 
+os quadros gerados pelo protótipo. Seu buffer foi 
+configurado em 50 MB para receber todos os quadros enviados pelo transmissor; 
+• cabos de interconexão, par trançado CAT 5e, com 
+1.5 metros de comprimento. 
+Todos os testes realizados para validação do protótipo, foram repetidos trinta vezes, com duração de dez 
+segundos cada. A quantidade de repetições e o tempo 
+de cada teste garante um intervalo de confiança de 99%. 
+5.1.1 Grupo de Testes I 
+Para este grupo de testes foram utilizados dois computadores. Um computador em modo servidor e outro computador em modo cliente. No software Net29 de Outubro a 1° de Novembro de 2008 
+perf pode-se enviar pacotes UDP ( User Datagram Protocol). Entretanto, o objetivo deste trabalho foi enviar quadros Ethernet com os tamanhos definidos pela 
+RFC. Para isso, foi necessário considerar os cabeçalhos 
+do protocolo IP (20 bytes) e UDP (8 bytes) no envio 
+dos quadros pelo Netperf. Por exemplo, para um quadro Ethernet de 64 bytes utilizou-se um pacote UDP 
+com tamanho de 18 bytes. 
+5.1.2 Grupo de Testes II 
+Esse grupo têm fundamental importância para a 
+validação do protótipo. Através desse teste é possível avaliar, de forma isolada, a capacidade máxima de 
+transmissão do protótipo segundo a recomendação da 
+RFC. Para a sua realização, foi utilizado um cabo especial chamado de loopback. Este cabo foi confeccionado 
+utilizando-se quatro condutores elétricos interligando 
+os sinais de recepção com os sinais de transmissão em 
+um mesmo conector. Com este cabo é possível enviar e 
+receber quadros no protótipo que está sendo validado. 
+5.1.3 Grupo de Testes III 
+Para este grupo foram realizados testes com uma 
+placa FPGA e a arquitetura prototipada. Esta placa 
+estava conectada em um switch, que por sua vez, estava 
+interligando a um computador para recepção e captura 
+dos quadros. 
+Na próxima Seção é apresentada uma análise das taxas de vazão máxima alcançadas em comparação com a 
+Vazão Ideal definida para um transmissão Ethernet de 
+100 Mbits/s, bem como, as latências para diferentes tamanhos de quadros. Também, é descrito os resultados 
+dos grupos de testes, demonstrando o desempenho do 
+protótipo em relação aos testes realizados com software 
+Netperf. 
+6 Resultados 
+O primeiro teste realizado teve como objetivo medir a vazão máxima alcançada pelo protótipo com um 
+cabo loopback, como descrito no Grupo de Teste II. 
+Os resultados obtidos podem ser visualizados na Figura 2, onde o eixo X representa os diversos tamanhos 
+de quadro, definidos pela RFC e o eixo Y representa 
+a quantidade de quadros enviados e recebidos por segundo. A curva da Vazão Ideal e a curva dos quadros 
+enviados e recebidos pelo protótipo estão sobrepostas 
+em todos os tamanhos de quadro. Com isso, demostrando que o protótipo desenvolvido têm a capacidade 
+de gerar quadros utilizando 100% da capacidade de um 
+equipamento Ethernet de 100 Mbitsjs. 
+IX Simpósio em Sistemas Computacionais 
+1,4. 10~ 
+i 
+!!. 
+i ····· 
+512 .... 1518 
+TamM'Iho dO Quadro 
+Figura 2. Teste com o protótipo em Joopback 
+No Grupo de Teste II, também, foi realizado o teste 
+da latência, conforme a RFC 2544. Para alcançar uma 
+maior precisão nos resultados, utilizou-se uma freqüência de 100 MHz para permitir a contabilização de ciclos . 
+da ordem de O.lJLs. Um temporizador foi inicializado 
+no momento que conclui-se o envio do último byte do 
+quadro e a finalização do temporizador ocorreu no momento em que o último byte foi recebido pelo protótipo. 
+Neste teste, a latência com o cabo loopback, para todos 
+os tamanhos de quadro, foi de 0.25JLS, valor de ida e 
+volta dividido por dois. A latência do protótipo para 
+transmissão dos quadros foi extremamente baixa, entretanto devido a grandeza de O.lJLs utilizada, os tempos para os diferentes tamanhos de quadros foram os 
+mesmo. 
+O segundo teste realizado, utilizando os Grupos de 
+Testes I e II, teve como objetivo comparar o desempenho do protótipo desenvolvido em relação ao software 
+Netperf. Os resultados obtidos demonstram que em 
+todos os tamanhos de quadro, o protótipo obteve um 
+desempenho maior em relação Netperf. O desempenho 
+do protótipo aumenta de forma acentuada para quadros menores. Este comportamento é justificado, pois 
+o software Netperf necessita de um maior poder computacional para transmitir quadros menores. A Figura 
+3 apresenta as três curvas referentes a Vazão Ideal, a 
+vazão alcançada com o Netperf e a vazão do protótipo. 
+Outra analise que pode ser realizada na Figura 3 
+é uma acentuada queda de desempenho para quadros 
+de 64 bytes nos resultados utilizando o Netperf. Esta 
+diminuição da vazão deve-se ao elevado uso de CPU 
+pelo aplicativo no processamento dos cabeçalhos dos 
+quadros Ethernet, saturando assim a capacidade de geração de novos quadros. Este elevado uso de CPU foi 
+constatado durante a análise dos resultados do teste de 
+149 
+1,4.10' \ 
+1,2.10' 
+i 
+10~ ·. l 
+8.104 \. !!. 
+! \ 8.104 \ 
+\ 
+4 .10
+4 
+' .... ... 
+2. 104 
+.. ,,. 256 ,,.. 15HI 
+Figura 3. Teste da vazão entre computadores 
+vazão gerados pelo aplicativo Netperf. 
+No teste realizado com o protótipo, não foi possível alcançar a taxa máxima para quadros de 64 bytes. 
+Alcançando-se uma vazão de 71% em relação a Vazão 
+Ideal. Isso ocorreu devido a baixa capacidade de processamento da placa de rede onboard utilizada no computador que recebeu os quadros. A Figura 4 apresenta 
+as curvas referentes as taxas de perdas de quadros obtidos nos testes dos grupos I e 11. Estes valores mostram 
+uma menor taxa de perda de quadros do protótipo em 
+relação ao software. 
+10' , • 
+\ 
+! ::: \~ 
+1..... \.. 
+' \ 
+....... : ..... 
+256 
+... ........ 
+512 1024 ,,.. 15 11 
+Figura 4. Quadros perdidos no teste da vazão 
+No Grupo de Testes III foi realizado o segundo teste 
+da latência, conforme a RFC 2544. A metodogia seguiu a mesma configuração do primeiro teste da latência, descrito anteriormente. Entretanto, o loopback foi 
+realizado no switch, que implementao algoritmo de repassamento de quadros store-and-forward. Como pode 
+150 
+ser observado na Figura 5, a latência encontrada neste 
+teste aumentou de forma linear em relação aos tamanhos dos quadros transmitidos. A diferença da latência entre o maior e o menor quadro foi de 114.03J.Ls. 
+Analisando-se a quantidade de bytes transmitidos por 
+um quadro em relação a latência, os dois primeiros tamanhos de quadro (64 e 128 bytes) apresentaram um 
+desempenho inferior aos demais. Por exemplo, a quantidade de bytes em relação a latência para quadros de 
+64 bytes foi de 0.175, enquanto para quadros de 1.518 
+bytes a relação foi de 0.008. 
+120 .. ·· 
+100 
+! 80 
+i 
+~ 60 
+... · 
+..... 
+/ 
+•• ... · . 
+.. ·· 
+20 
+o ... l....L,.,.-.-:',...,.------::$'.,.12------:1~02.---1~200.,.----::',518 
+Figura 5. Teste da latência com /oopback no 
+switch 
+7 Conclusões 
+Este artigo apresentou uma arquitetura para testes 
+em redes Ethernet utilizando um FPGA. A utilização 
+desse hardware para os testes de vazão e latência obtiveram consideráveis ganhos de desempenho em relação 
+aos testes realizado por software. 
+Nos testes realizados com o software Netperf 
+verificou-se que existe um grande consumo de processamento para quadros de menor tamanho, assim a vazão medida foi inferior em relação as taxas teóricas de 
+transmissão de quadros para tamanhos menores. Estes resultados são justificados, porque como os testes 
+foram realizados em computadores de uso geral , o software não dispunha de todo poder de processamento 
+para executar o teste. O ganho real de uma implementação em hardware foi apresentada neste trabalho, 
+demostrando o desempenho em diferentes cenários de 
+testes para equipamentos Ethernet. 
+O protótipo desenvolvido em hardware dispõe de 
+todo poder de processamento do FPGA para a geração 
+dos quadros Ethernet, possibilitando alcançar a Vazão 
+29 de Outubro a 1 Q de Novembro de 2008 
+Ideal e uma menor latência na sua utilização. Além 
+do desempenho superior o desenvolvimento do equipamento de teste em tecnologia FPGA, proporciona uma 
+maior flexibilidade, permitindo a personalização dos 
+blocos responsáveis pela geração de quadros Ethernet. 
+Essa flexibilidade permite que se desenvolva t rabalhos 
+futuros, como por exemplo, a geração de quadros fora 
+do padrão Ethernet, com objetivo de avaliar a conformidade dos equipamentos testados como a norma IEEE 
+802.3. 
+Agradecimentos 
+Os autores agradecem o suporte oferecido na forma 
+de bolsas, auxílios e equipamentos da UNISC e da empresa DATACOM. 
+Referências 
+(1) Modelsim SE user's manual. http: llvvv.model. 
+comlresourceslresources_manuals .asp. Mentor 
+Graphics Corporation, June, 2006. 
+(2) Software Iperf. http: I l dast .nlanr .netiProjectsl 
+Iperf/. June, 2008. 
+[3) Software Netperf. http: I l vvv .netperf. org. June, 
+2008. 
+(4) Agilent N2620A framescope pro network performance 
+analyzer, January 2007. 
+(5) I. Avnet. Xilinx Virtex-11 pro development kit, May 
+2003. 
+(6) S. Bradner and J. McQuaid. Request for Comments: 
+2544 - benchmarking methodology for network interconnect devices, 1999. 
+(7) S. Dibuz and P. Kremer. An easy way to test interoperability and conformance. In Proceedings of the 
+2nd International Conference on Testbeds and Research Infrastructures for the Development of Networks 
+and Communities. IEEE, March 2006. 
+(8) G. Gibb~ J. W. Lockwood, J. Naous, P. Hartke, and 
+N. McKeown. NetFPGA an open platform for teaching how to build Gigabit-rate network switches and 
+routers. IEEE Transactions on Education, 51, January 
+2008. 
+(9) C. Horna, F. Ramos, M. Barcelos, and R. Reis. Implementação e Validação de IP Soft Cores para Interfaces 
+Ethernet 10/ 100 e 1000 Mbps Sobre Dispositivos Reconfiguráveis. In Proceedings of the 13th Workshop 
+Iberchip, Lima, Peru, 2007. 
+[10) J. Moreno, P. Corrales, and J. Perez. Design of a parametrizable low cost Ethernet MAC core for SoC solutions. In Proceedings of the International Symposium 
+on System-on-Chip. IEEE, November 2003. 
+(11) J. Talledo. Design and implementation of an ethernet 
+frame analyzer for high speed networks. In Proceedings 
+o f the 15th International Conference on Communications and Computers, CONIELECOMP. IEEE, February 2005. 

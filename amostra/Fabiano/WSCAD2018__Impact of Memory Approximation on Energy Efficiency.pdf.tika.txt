@@ -1,0 +1,2358 @@
+Impact of Memory Approximation on Energy Efficiency
+Impact of memory approximation
+on energy efficiency
+Isaı́as B. Felzmann∗, João Fabrı́cio Filho∗†, Rodolfo Azevedo∗ and Lucas F. Wanner∗
+∗Institute of Computing
+University of Campinas
+{isaias.felzmann, rodolfo, lucas}@ic.unicamp.br
+†Federal University of Technology - Paraná
+Campus Campo Mourão
+joaof@utfpr.edu.br
+Abstract—Approximate memories can lower energy consumption at expense of incurring errors in some of the read/write
+operations. While these errors may be tolerated in some cases,
+in general, parts of the application must be re-executed to
+achieve usable results when a large number of errors occur.
+Frequent re-executions may, in turn, attenuate or negate energy
+benefits obtained from using approximate memories. In this
+work, we show the energy impact of memory approximations
+in applications considering different quality requirements. Five
+out of nine selected applications showed a positive energy-quality
+tradeoff. For these applications, our results show up to 30%
+energy savings at a 10−8 error rate, when a 20% degradation in
+quality is allowed.
+Index Terms—Approximate Computing, Energy Efficiency,
+Memory approximation
+I. INTRODUÇÃO
+Elementos de memória podem representar até 40% do
+consumo de energia em sistemas computacionais [1], [2].
+O uso de técnicas de ajuste dinâmico de tensão (Dynamic
+Voltage-Frequency Scaling - DVFS) permite que memórias
+operem em regiões de maior eficiência energética [3]. Porém,
+a diminuição da tensão de alimentação resulta em menores
+margens de ruı́do estático e dinâmico e, consequentemente,
+em maior probabilidade de erros de leitura e escrita [4].
+Tendo em vista que diversas aplicações apresentam alguma
+resiliência a erros, o paradigma de Computação Aproximada
+propõe a exploração mais agressiva das margens de tolerância
+em diversos nı́veis de projeto, incluindo o ajuste de tensão
+além da margem aceitável de ruı́do [5], [6]. Isso permite uma
+significativa redução na dissipação de potência de um circuito
+integrado, que é um fator limitante para o desenvolvimento de
+hardware [7], [8]. Por outro lado, os erros podem ter impacto
+maior do que o previsto na qualidade do resultado de qualquer aplicação executada, o que requer algum mecanismo de
+recuperação e amortiza os ganhos em eficiência energética [9],
+[10].
+Neste trabalho, utilizamos simulação de arquiteturas computacionais baseada em ArchC [11], [12] para expor diferentes
+This work was executed with support from the National Council for Scientific and Technological Development - Brazil (CNPq) grant #404261/2016-7;
+Coordination for the Improvement of Higher Education Personnel - Brazil
+(CAPES) - Finance Code 001; and São Paulo Research Foundation (FAPESP)
+grant #2017/08015-8.
+tipos de aplicações a memórias aproximadas. Assim buscamos
+o ponto de equilı́brio entre o ganho com economia de energia
+e a perda para recuperação de resultados. Em nosso sistema
+conceitual, a aplicação possui controle direto sobre parâmetros
+que definem a probabilidade de erros na leitura e escrita de
+dados. Além disso, o sistema implementa um mecanismo de
+controle de qualidade baseado em reexecução de aplicações
+cujas métricas de qualidade não atingem nı́veis aceitáveis.
+Nossos experimentos demonstram a execução de 9
+aplicações que representam atividades comuns em sistemas
+computacionais. Dessas aplicações, mostramos 5 pontos de
+inflexão no consumo de energia, considerando as reexecuções
+para readequação de qualidade. Nossos resultados mostram
+o perfil energético para cada aplicação e demonstram o
+equilı́brio entre qualidade e energia, obtendo até 30% de
+economia de energia para aplicações que exijam um mı́nimo
+de 80% de precisão nos resultados.
+II. FUNDAMENTOS E TRABALHOS RELACIONADOS
+A Computação Aproximada consiste em um padrão de
+computação com menor custo energético, comprometendo a
+precisão dos resultados obtidos [13]. Uma técnica conhecida
+para exploração de Computação Aproximada é o ajuste de
+tensão de alimentação além dos limites considerados seguros
+para manutenção de um resultado preciso, geralmente causando falhas temporais ou de chaveamento dos circuitos [5].
+Em elementos de memória, a redução da tensão de alimentação
+provoca a redução das margens de ruı́do estático e dinâmico
+nas células de memória, resultando em uma maior probabilidade de erros de leitura e escrita ou na perda do dado
+armazenado [6], [14].
+O modelo estatı́stico proposto por Wang e Calhoun [2011]
+associa, com base em valores iniciais experimentais, a tensão
+de alimentação com a probabilidade de ocorrência de erros,
+conforme a Figura 1(a). Considerando que energia possui
+relação quadrática com a tensão de alimentação, é possı́vel
+prever o consumo energético após ajuste de tensão, relativo
+ao consumo de uma memória que garanta uma taxa de erro
+menor do que 10−12 (Fig. 1(b)). A análise em nı́vel de circuito,
+porém, dificulta o estudo do impacto desses erros em memória
+no nı́vel de aplicação. A alternativa é a modelagem dos erros
+em nı́veis de abstração mais altos, na forma de modificações
+53
+2018 Symposium on High Performance Computing Systems (WSCAD)
+978-1-7281-3772-8/18/$31.00 ©2018 IEEE
+DOI 10.1109/WSCAD.2018.00018
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+nas palavras de dados provenientes dos elementos de memória,
+e a utilização desses modelos em ambientes simulados.
+EnerJ [15] propõe um controle explı́cito para aproximar
+tipos de dados em linguagem de programação. Esse trabalho mostrou que pequenas aproximações de dados podem
+inferir em um significativo potencial de economia de energia. Sua sucessão, ACCEPT [16], é um framework para
+programação aproximada guiado por anotações. As relaxações
+por aproximação desse trabalho demonstraram benefı́cios para
+os programas no desempenho e na utilização energética.
+No trabalho em [17], os autores exploraram modificações
+em códigos de programas, visando otimizações para aplicações
+de data centers. Os autores relacionaram a qualidade das
+saı́das de cada código gerado com a economia de energia
+resultante, mostrando que há menor consumo energético em
+aplicações com maior aceitabilidade de erro. DrSEUs [18] se
+volta para memórias, explorando possı́veis falhas na cache
+de processadores e a classificação dos possı́veis erros decorrentes dessas falhas, levando em consideração a resiliência da
+aplicação e a implicação em reexecuções, porém sem considerar as implicações em termos de energia. Rumba [19] revisita
+a ideia de reexecução com um mecanismo de verificação de
+partes da aplicação para erros mais altos, ao custo de um
+monitoramento em tempo de execução.
+Neste trabalho, expandimos a cobertura de erros em
+memória dentro de diferentes tipos de aplicação, sem isolamento de estruturas. Para cada aplicação, apresentamos os
+limiares de ganho energético com base na qualidade das
+saı́das e probabilidade necessidade de uma reexecução. Com
+base nos dados de Wang e Calhoun [2011] e considerando
+a possibilidade de reexecução, a Figura 1(c) demonstra a
+tendência esperada no consumo médio de energia de acordo
+com a taxa de erros de memória. No ponto inicial A, a taxa
+de erros é tão baixa que se compara a uma execução sem
+erros, com custo energético equivalente. A medida que a taxa
+aumenta, o consumo energético encaminha-se para o ponto de
+equilı́brio B, de maior economia, caracterizado pela necessidade de poucas reexecuções. A medida que mais reexecuções
+são necessárias, a energia consumida por execuções precisas
+adicionais passa a ser dominante, até o ponto máximo C, em
+que muitas execuções aproximadas completam, mas resultam
+em qualidade abaixo do requerido. Por fim, a ocorrência de
+falhas de execução começa a causar a conclusão prematura
+de algumas execuções, reduzindo o trabalho em execuções
+aproximadas e fazendo com que novamente o custo energético
+se aproxime ao custo de execuções precisas, no ponto D.
+III. CONDUÇÃO DOS EXPERIMENTOS
+O modelo de arquitetura que consideramos neste trabalho
+é baseado em um processador de baixo consumo voltado
+para dispositivos embarcados. Nesse modelo conceitual, existe
+a implementação de um conjunto de “estados aproximados”
+capazes de influenciar diretamente a tensão de alimentação do
+banco de registradores e da memória de dados, deixando o
+sistema suscetı́vel a erros de leitura e escrita [4]. O estado
+aproximado atual é definido por meio de um registrador
+mapeado em memória disponı́vel para a aplicação.
+Essa arquitetura foi representada em linguagem ArchC com
+base em um modelo do processador MIPS [11]. O modelo
+original foi estendido para a inclusão de aproximações utilizando a linguagem de descrição ADeLe, voltada à modelagem de Computação Aproximada [12]. Todas as operações
+de leitura e escrita no banco de registradores e na memória
+de dados foram substituı́das por modelos em software de três
+tipos de erros:
+• BitFlip: um dos bits do vetor de dados é sorteado e seu
+valor é invertido;
+• StuckAt(0): um dos bits do vetor de dados é sorteado e
+seu valor definido como 0;
+• StuckAt(1): análogo a StuckAt(0), com o valor do bit
+definido como 1.
+Devido a tais erros serem probabilı́sticos, qualquer operação
+de leitura ou escrita tem a mesma probabilidade de ser afetada.
+Foram selecionadas 9 diferentes aplicações para representar
+um conjunto de elementos comuns em dispositivos embarcados. Em cada aplicação, o código do kernel de execução foi
+isolado e apenas nele os erros são aplicados. Desse modo, as
+operações de entrada e saı́da, caracterı́sticas de simulação, são
+executadas de forma precisa. As aplicações selecionadas, suas
+respectivas classificações e métricas de qualidade são:
+• Aplicações tı́picas: Tipicamente, trabalhos relacionados
+a Computação Aproximada utilizam algoritmos de processamento multimı́dia para demonstração de resultados [20]. Assim, selecionamos o algoritmo de compressão
+de imagens JPEG disponı́vel na suı́te AxBench [21] e a
+computação de Transformada Rápida de Fourier (FFT) do
+MiBench [22]. As imagens JPEG computadas pela versão
+sujeita a erros foram comparadas com resultados precisos
+utilizando a métrica de Similaridade Estrutural [23], [24].
+Para FFT foi computado o número de amostras fora de
+uma margem tolerância da ordem 10−9 no sinal após
+reconstrução com a Transformada Inversa.
+• Aplicações CPU-bound: As aplicações Mandelbrot, NBody e SpectralNorm foram selecionadas dentre as
+aplicações em [25]. Essas aplicações têm em comum um
+maior uso do tempo de CPU e um menor uso de memória,
+portanto potencialmente demonstrando maior resiliência
+para aproximações em memória. Os bitmaps gerados
+pelas versões sujeitas a erros na aplicação Mandelbrot
+foram comparados com as saı́das geradas pela versão precisa utilizando a métrica de Similaridade Estrutural [23],
+[24]. As qualidades das saı́das das execuções sujeitas a
+erros de N-Body e SpectralNorm foram calculadas pelo
+complemento do erro relativo médio.
+• Aplicações Memory-Bound: Foram selecionados os algoritmos de Dijkstra, ordenação QSort, compressão de
+dados bzip e descompressão de dados bunzip a partir
+das suı́tes MiBench [22] e cBench [26]. Essas aplicações
+apresentam um maior uso da memória, e, portanto,
+são mais suscetı́veis ao tipo de aproximação de dados
+54
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+1
+.0
+e
+-9
+1
+.0
+e
+-8
+1
+.0
+e
+-7
+1
+.0
+e
+-6
+1
+.0
+e
+-5
+1
+.0
+e
+-4
+1
+.0
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+500
+600
+700
+800
+900
+T
+e
+n
+s
+ã
+o
+[m
+V
+]
+(a)
+1
+.0
+e9
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+20%
+30%
+40%
+50%
+60%
+70%
+E
+n
+e
+rg
+ia
+[%
+]
+(b) (c)
+Fig. 1. Relação entre energia e erros em memórias: (a) Tensão de operação; (b) Energia; (c) Impacto esperado em uma aplicação.
+explorada neste trabalho. A qualidade das saı́das sujeitas a erros da aplicação QSort é medida conforme
+a fração de elementos iguais aos da ordenação correta.
+Para implementar a métrica de qualidade da aplicação
+Dijkstra, a saı́da foi modelada com base na construção
+de tabelas de roteamento, na qual cada dado na linha i e
+coluna j indica o próximo hop para chegar ao destino
+j estando na origem i. Dessa forma, a qualidade é a
+fração de próximos hops corretos na tabela de saı́da. As
+aplicações bzip e bunzip foram utilizadas para comprimir
+e descomprimir arquivos-texto, analisando qualidade pela
+similaridade entre as cadeias de caracteres do conteúdo
+dos arquivos.
+As execuções de cada aplicação foram repetidas 100 vezes,
+submetidas a variadas probabilidades de erros de leitura e
+escrita. As probabilidades foram definidas desde o ponto de
+ocorrência de 1 erro dentre todas as instruções no kernel na
+aplicação (conforme o número de instruções executado) até
+1%. Para cada execução, foram analisadas a resiliência da
+aplicação – que é a probabilidade de ocorrência de uma falha
+que impeça o término da execução – e a qualidade final do
+resultado gerado.
+Na arquitetura proposta, quando uma determinada execução
+não atinge um limiar mı́nimo de qualidade, o resultado deve
+ser reexecutado em modo preciso, com uma penalidade em
+energia. Assim, as métricas de qualidade e resiliência foram
+agregadas para obter a probabilidade de reexecução de uma
+aplicação em modo preciso e o consumo de energia total,
+considerando-se a execução aproximada e a precisa subsequente, quando houver. A energia necessária para execução
+foi derivada pelo método em [4].
+IV. RESULTADOS
+Nossos resultados mostram a análise de resiliência das
+aplicações para 100 repetições de cada execução. Além disso,
+foram analisadas as métricas de qualidade apresentadas na
+Seção III e, a partir delas, computada a energia média de uma
+execução qualquer.
+A. Análise de resiliência
+Para análise de resiliência, a ocorrência de uma falha
+significa que a execução foi interrompida antes da produção
+de um resultado válido. Tais falhas foram classificadas em três
+categorias:
+• Falhas no fluxo de controle: ocorrem quando o endereço
+de destino de um salto é lido incorretamente, provocando
+um salto para um endereço inválido.
+• Falhas no fluxo de dados: ocorrem quando um dado é
+buscado num endereço de memória inválido (Segmentation Fault).
+• Falhas de tempo: ocorrem quando um resultado válido
+não é computado em tempo hábil. O tempo máximo que
+uma execução aproximada pode utilizar foi fixado em 5
+vezes o tempo de uma computação precisa.
+Os gráficos da Figura 2 demonstram a análise de resiliência
+das aplicações. De maneira geral, a suscetibilidade a erros
+no banco de registradores da arquitetura proposta apresenta
+drásticos efeitos no fluxo da aplicação. De fato, o banco de
+registradores armazena, além de valores locais, endereços de
+memória, variáveis de controle de laços e endereços de retorno
+de funções ou destino de saltos. Além disso, as falhas do
+tipo Tempo, em que um resultado não foi computado em
+tempo hábil, concentram-se principalmente em situações em
+que erros são aplicados aos registradores, demonstrando a
+baixa resiliência de estruturas de controle a aproximações.
+Os erros do tipo StuckAt(0) mostram ser mais facilmente
+mascarados pelas aplicações em termos de falhas de execução.
+Esse tipo de erro, quando afeta endereços de memória, tem a
+tendência de alterar o dado para um endereço que ainda pertence ao programa executado, possivelmente na mesma página
+de memória, mitigando a ocorrência de falhas de dados e
+controle. Por outro lado, esse mesmo comportamento, quando
+aplicado a endereços de destino de saltos ou variáveis de
+controle de laços, aumenta o tempo de execução da aplicação,
+possivelmente criando laços infinitos, aumentando a ocorrência
+de falhas de tempo, especialmente naquelas baseadas em
+convergência, como N-Body (Fig. 2(c)) e Dijkstra (Fig. 2(f)).
+A resiliência das aplicações é fator limitante do equilı́brio
+entre qualidade e energia, uma vez que uma falha de execução
+55
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e8
+4
+.6
+e8
+2
+.2
+e7
+1
+.0
+e6
+4
+.6
+e6
+2
+.2
+e5
+1
+.0
+e4
+4
+.6
+e4
+2
+.2
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(a) JPEG
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e8
+4
+.6
+e8
+2
+.2
+e7
+1
+.0
+e6
+4
+.6
+e6
+2
+.2
+e5
+1
+.0
+e4
+4
+.6
+e4
+2
+.2
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(b) FFT
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e8
+4
+.6
+e8
+2
+.2
+e7
+1
+.0
+e6
+4
+.6
+e6
+2
+.2
+e5
+1
+.0
+e4
+4
+.6
+e4
+2
+.2
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(c) N-Body
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e9
+6
+.0
+e9
+3
+.6
+e8
+2
+.2
+e7
+1
+.3
+e6
+7
+.7
+e6
+4
+.6
+e5
+2
+.8
+e4
+1
+.7
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(d) Mandelbrot
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e9
+6
+.0
+e9
+3
+.6
+e8
+2
+.2
+e7
+1
+.3
+e6
+7
+.7
+e6
+4
+.6
+e5
+2
+.8
+e4
+1
+.7
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(e) SpectralNorm
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e9
+6
+.0
+e9
+3
+.6
+e8
+2
+.2
+e7
+1
+.3
+e6
+7
+.7
+e6
+4
+.6
+e5
+2
+.8
+e4
+1
+.7
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(f) Dijkstra
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e9
+6
+.0
+e9
+3
+.6
+e8
+2
+.2
+e7
+1
+.3
+e6
+7
+.7
+e6
+4
+.6
+e5
+2
+.8
+e4
+1
+.7
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(g) bzip2
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e8
+4
+.6
+e8
+2
+.2
+e7
+1
+.0
+e6
+4
+.6
+e6
+2
+.2
+e5
+1
+.0
+e4
+4
+.6
+e4
+2
+.2
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(h) bunzip2
+0%
+50%
+100%
+B
+it
+F
+li
+p
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+0
+)
+1
+.0
+e8
+4
+.6
+e8
+2
+.2
+e7
+1
+.0
+e6
+4
+.6
+e6
+2
+.2
+e5
+1
+.0
+e4
+4
+.6
+e4
+2
+.2
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+S
+tu
+c
+k
+A
+t(
+1
+)
+E
+x
+e
+c
+u
+ç
+õ
+e
+s
+[%
+]
+(i) QSort
+Fig. 2. Análise de resiliência.
+56
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+1
+.0
+e
+-8
+4
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.0
+e
+-6
+4
+.6
+e
+-6
+2
+.2
+e
+-5
+1
+.0
+e
+-4
+4
+.6
+e
+-4
+2
+.2
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(a) JPEG
+1
+.0
+e
+-8
+4
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.0
+e
+-6
+4
+.6
+e
+-6
+2
+.2
+e
+-5
+1
+.0
+e
+-4
+4
+.6
+e
+-4
+2
+.2
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(b) FFT
+1
+.0
+e
+-8
+4
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.0
+e
+-6
+4
+.6
+e
+-6
+2
+.2
+e
+-5
+1
+.0
+e
+-4
+4
+.6
+e
+-4
+2
+.2
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(c) N-Body
+1
+.0
+e
+-9
+6
+.0
+e
+-9
+3
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.3
+e
+-6
+7
+.7
+e
+-6
+4
+.6
+e
+-5
+2
+.8
+e
+-4
+1
+.7
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(d) Mandelbrot
+1
+.0
+e
+-9
+6
+.0
+e
+-9
+3
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.3
+e
+-6
+7
+.7
+e
+-6
+4
+.6
+e
+-5
+2
+.8
+e
+-4
+1
+.7
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(e) SpectralNorm
+1
+.0
+e
+-9
+6
+.0
+e
+-9
+3
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.3
+e
+-6
+7
+.7
+e
+-6
+4
+.6
+e
+-5
+2
+.8
+e
+-4
+1
+.7
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(f) Dijkstra
+1
+.0
+e
+-9
+6
+.0
+e
+-9
+3
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.3
+e
+-6
+7
+.7
+e
+-6
+4
+.6
+e
+-5
+2
+.8
+e
+-4
+1
+.7
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(g) bzip2
+1
+.0
+e
+-8
+4
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.0
+e
+-6
+4
+.6
+e
+-6
+2
+.2
+e
+-5
+1
+.0
+e
+-4
+4
+.6
+e
+-4
+2
+.2
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(h) bunzip2
+1
+.0
+e
+-8
+4
+.6
+e
+-8
+2
+.2
+e
+-7
+1
+.0
+e
+-6
+4
+.6
+e
+-6
+2
+.2
+e
+-5
+1
+.0
+e
+-4
+4
+.6
+e
+-4
+2
+.2
+e
+-3
+1
+.0
+e
+-2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+Q
+u
+a
+li
+d
+a
+d
+e
+[%
+]
+(i) QSort
+Fig. 3. Qualidade dos resultados.
+resulta em computação inútil e, consequentemente, desperdı́cio
+de energia. Além disso, mesmo quando uma falha não ocorre,
+problemas de controle podem levar a um maior tempo de
+execução, com efeito negativo sobre a energia.
+A maior parte das falhas decorrentes dos erros inseridos
+em memória são decorrentes do acesso a endereços inválidos.
+Esse tipo de falha pode ser mascarado com base no isolamento
+de áreas de memória para armazenamento de ponteiros e
+endereços alvo de saltos. Desta forma, as aplicações demonstrariam uma maior resiliência, já que os erros afetariam
+apenas os dados propriamente ditos, mas haveria a necessidade
+de se manter regiões de memória sempre em um modo
+não sujeito a falhas, o que impacta o custo energético das
+operações.
+B. Qualidade dos resultados
+Os gráficos da Figura 3 mostram a qualidade final média do
+resultado relativa a uma execução precisa da mesma aplicação.
+Para computação da qualidade, foi utilizada a média das
+métricas descritas na Seção III para 100 execuções, com um
+intervalo de confiança de 95%. As execuções que resultam em
+falha de execução foram computadas com qualidade zero, pois
+um resultado utilizável não foi obtido.
+As falhas de execução são fatores dominantes na medida
+final de qualidade. O isolamento de estruturas de controle pode
+evitar falhas de execução, direcionando o impacto dos erros
+ao resultado final. A análise dos pontos iniciais dos gráficos
+da Figura 3 evidencia que o detrimento de qualidade é menos
+abrupto em execuções que completam com sucesso, o que
+57
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(a) Memória, Q > 50%
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(b) Memória, Q > 70%
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(c) Memória, Q > 90%
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(d) Registradores, Q > 50%
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(e) Registradores, Q > 70%
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+20%
+40%
+60%
+80%
+100%
+P
+ro
+b
+a
+b
+il
+id
+a
+d
+e
+d
+e
+re
+e
+x
+e
+c
+u
+ç
+ã
+o
+[%
+]
+(f) Registradores, Q > 90%
+Fig. 4. Probabilidade de reexecução.
+indica uma possibilidade de maior eficiência energética.
+Outro efeito da baixa resiliência das aplicações é o maior
+impacto na qualidade causado pelas aproximações em registradores. Ainda assim, desconsiderando-se as falhas, a
+aproximação de registradores provoca maior degradação de
+qualidade, pois como as operações ocorrem em maior número,
+são mais afetadas por erros. Isso indica uma desvantagem da
+técnica de aproximação quando aplicada a registradores.
+C. Energia
+Embora o uso de estruturas de memória aproximadas
+ofereça um ganho em economia de potência no sistema, a
+ocorrência de falhas de execução e a degradação da qualidade
+do resultado podem requerer a reexecução de determinadas
+instâncias de uma aplicação. Quando uma reexecução em
+modo preciso é necessária, existe um impacto no consumo
+de energia. Com base na qualidade do resultado esperada para
+cada aplicação (Seção IV-B), calculamos a probabilidade de
+uma determinada execução resultar em qualidade abaixo do
+requerido e ter de ser reexecutada em modo preciso. A Figura 4
+mostra essa probabilidade quando deseja-se uma métrica de
+qualidade maior que 50%, 70% e 90%, com erros aplicados a
+memória e registradores.
+Uma reexecução em modo preciso resulta em uma penalidade em energia fixa para cada aplicação. Por outro lado,
+a energia de uma execução em modo aproximado depende
+do tempo de execução até a obtenção de um resultado ou a
+ocorrência de uma falha. Assim, a energia relativa esperada foi
+computada de acordo com a média do número de instruções
+executadas pela versão aproximada da aplicação e do número
+de instruções do modo preciso.
+A Figura 5 relaciona a taxa de erros na execução de cada
+aplicação com o consumo médio esperado de energia, com
+um intervalo de confiança de 95%. De modo geral, todas as
+aplicações demonstram alguma economia de energia com a
+flexibilização do requisito de qualidade, quando considerados
+erros aplicados em memória. Para erros em registradores, por
+outro lado, a maior parte dos resultados sequer demonstra
+alguma economia de energia, prejudicada principalmente pela
+baixa resiliência das aplicações.
+De modo particular, a inclusão de falhas em registradores
+para a aplicação FFT ocasiona uma grande variação no
+número de instruções executadas em modo aproximado entre
+diferentes repetições. Um comportamento semelhante também
+pode ser observado analisando-se o grande número de falhas
+de tempo para essa aplicação (Figura 2(b)). A estrutura de
+laços aninhados do algoritmo da Transformada de Fourier
+é bastante desfavorável a erros que afetem as estruturas de
+controle, como os aplicados a registradores. Para as demais
+aplicações, por outro lado, a variação no número de instruções
+em modo aproximado, embora cause variações na energia de
+cada execução, é facilmente mitigada perante várias repetições.
+Os resultados para o consumo de energia demonstram um
+comportamento semelhante ao esperado (Figura 1(c)), em que
+58
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(a) JPEG
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(b) FFT
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(c) N-Body
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(d) Mandelbrot
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(e) SpectralNorm
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(f) Dijkstra
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(g) bzip2
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(h) bunzip2
+1
+.0
+e8
+1
+.0
+e7
+1
+.0
+e6
+1
+.0
+e5
+1
+.0
+e4
+1
+.0
+e3
+1
+.0
+e2
+Taxa de erro
+0%
+50%
+100%
+150%
+200%
+E
+n
+e
+rg
+ia
+e
+s
+p
+e
+ra
+d
+a
+[%
+]
+(i) QSort
+Fig. 5. Equilı́brio entre qualidade e energia.
+o consumo diminui com o aumento da taxa de erros até o
+ponto em que há um maior detrimento de qualidade, tornando
+a reexecução um fator dominante. Esse ponto de inflexão no
+consumo de energia – ponto B na Figura 1(c) – é visı́vel para
+5 das 9 aplicações testadas. As demais aplicações apresentam
+uma inclinação ascendente para os pontos iniciais, indicando
+que o ponto de equilı́brio existe, mesmo que menos acentuado,
+em uma taxa de erros menor. Taxas menores, por outro lado,
+caracterizam uma menor economia de energia, atenuando os
+efeitos da exploração de aproximações.
+V. CONCLUSÃO
+Apresentamos um estudo do efeito de erros em memória,
+caracteristicamente decorrentes da exploração de técnicas de
+Computação Aproximada, na execução de aplicações. Nosso
+estudo demonstra um ponto de equilı́brio entre a qualidade
+final do resultado e o custo energético da utilização de
+memórias em um sistema computacional. A economia de
+energia, embora mais acentuada em aplicações inerentemente
+mais resilientes a falhas, está também presente em aplicações
+não tradicionalmente associadas com Computação Aproximada. Assim, uma maior permissividade de erros em memória
+demonstrou-se vantajosa, evidenciando uma boa aplicabilidade
+das técnicas para o aumento da eficiência energética.
+Apesar das vantagens, algumas aplicações só começam a
+demonstrar economia de energia para requisitos de qualidade
+mais flexı́veis. A flexibilização da qualidade, dependendo da
+59
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:24:03 UTC from IEEE Xplore.  Restrictions apply. 
+aplicação, pode ser indesejável, de modo que é necessário o
+desenvolvimento de técnicas que melhorem a resiliência das
+execuções. Nossos experimentos mostram que as falhas de
+execução decorrentes de erros em memória, como saltos para
+endereços inválidos, são um fator determinante da qualidade
+final do resultado. Para melhorar a resiliência, seria possı́vel
+isolar alguns dados, como variáveis intimamente ligadas com
+controle e endereços de memória, em regiões não sujeitas a
+falhas.
+O isolamento de áreas de memória para armazenamento
+de dados que não admitem erros, aliado à exploração de
+aproximações em um conjunto de dados extenso, tem o
+potencial de deslocar o ponto de equilı́brio entre qualidade e
+energia para regiões energeticamente mais eficientes. Assim,
+é importante o desenvolvimento de ferramentas voltadas à
+identificação de regiões de dados verdadeiramente essenciais,
+para minimizar a ocorrência de falhas nas execuções. Como
+trabalhos futuros, planejamos o estudo da resiliência de diversas aplicações, isolando regiões de dados essenciais, por meio
+de modelos de programação ou arquitetura, com o objetivo de
+avaliar o equilı́brio entre qualidade e energia, como base para
+o desenvolvimento de uma ferramenta automatizada.

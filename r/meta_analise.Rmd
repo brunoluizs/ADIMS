@@ -1,0 +1,202 @@
+---
+title: "Meta_Analise"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## packages used
+```{r}
+citation()
+citation("dplyr")
+citation("tidyr")
+citation("ggplot2")
+citation("ggthemes")
+```
+
+
+## read summarized csv data create some variables on data frame
+```{r}
+#initialize packages
+library(dplyr)
+library(tidyr)
+
+
+# Read csv data
+df2 = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/DadosWSCAD/evento_tipo_ano.csv",  header=TRUE, sep=";") 
+#df2 = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/Trabalho/meta_analise/SMPE-UFRGS-master/evento_tipo_ano.csv",  header=TRUE, sep=";") 
+
+# Filtering only WSCAD conference
+df2 = df2[df2$tipo!="EXT" & df2$evento=="WSCAD" ,] # filter only one category
+
+
+
+# creates the relative frequency variable on data frame
+df2 = df2 %>% 
+     group_by(evento) %>% 
+     mutate(freq_relat=n_art/total) %>%  
+     mutate(freq_relat=round(freq_relat*100, 2))
+
+# creates the citation ratio variable on data frame
+df2 = df2 %>% 
+     group_by(evento, tipo, ano) %>% 
+     mutate(cit_ratio=n_ocur/n_art) %>%  
+     mutate(cit_ratio=round(cit_ratio, 2))
+
+# show data frame
+df2
+
+
+```
+
+## declares a graph function 
+```{r}
+
+# parameters:
+# vx - variable for x axxis
+# vy - variable for y axxis
+# lx - label for x axxis
+# ly - label for y axxis
+# gt - graphic tittle 
+
+plot_gg <- function(vx, vy, lx, ly, gt)
+{
+  library(ggplot2)
+  library(ggthemes)
+  
+  # initialize the graph with a shape for each value from TIPO
+  graph = ggplot(data=df2, aes(x = vx, y = vy , shape=as.factor(tipo)))
+
+  # set the color for each shape according to TIPO
+  graph = graph + geom_point(aes(x = vx, y = vy , color=as.factor(tipo)), size=3)
+
+  # set the x/y labels and graph types
+  graph = graph + labs(x=lx, y=ly, title = gt)
+
+  # set the graph side labels tittle 
+  graph = graph  + scale_colour_brewer(palette="Dark2")
+
+  # variable to pivot the graph
+  graph = graph  + facet_wrap(~evento)
+  
+ # graph = graph  + geom_smooth(method=lm, se=FALSE, fullrange=TRUE)
+
+  # plot the graph
+  graph
+  
+}
+
+
+```
+
+## Relative Frequency by tipo/ano for conference WSCAD
+```{r}
+
+plot_gg(df2$ano, df2$freq_relat, "Ano", "% Artigos", "")
+
+```
+
+## Citation Ratio by tipo/ano for conference WSCAD
+```{r}
+
+plot_gg(df2$ano, df2$cit_ratio,  "Ano", "Citações por Artigo", "")
+
+```
+
+
+
+## Summarizing Tables
+### Table Estatistical Terms by year
+```{r}
+# Read raw csv data
+df_raw = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/DadosWSCAD/resultados.csv",  header=TRUE, sep=";") 
+#df_raw = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/Trabalho/meta_analise/SMPE-UFRGS-master/resultados.csv",  header=TRUE, sep=";") 
+
+
+# Filtering only WSCAD conference and EST type
+df_est = df_raw[df_raw$evento=="WSCAD" & df_raw$tipo=="EST",] # filter only one category
+
+df_est = df_est   %>% 
+  group_by( ano , termo) %>% 
+  summarise(n= n())
+df_est = spread(df_est, termo, n)
+df_est
+```
+
+### Table Metric Terms by year
+```{r}
+# Filtering only WSCAD conference and MET type
+df_met = df_raw[df_raw$evento=="WSCAD" & df_raw$tipo=="MET",] # filter only one category
+
+df_met = df_met   %>% 
+  group_by( ano , termo) %>% 
+  summarise(n= n())
+df_met = spread(df_met, termo, n)
+df_met
+```
+
+### Table Estatistical Tests by year
+```{r}
+# Filtering only WSCAD conference and TST type
+df_tst = df_raw[df_raw$evento=="WSCAD" & df_raw$tipo=="TST",] # filter only one category
+
+df_tst = df_tst   %>% 
+  group_by( ano , termo) %>% 
+  summarise(n= n())
+df_tst = spread(df_tst, termo, n)
+df_tst
+
+```
+
+### Categorical distribuition by year
+```{r}
+# Filtering only WSCAD conference and just category of terms
+df = df_raw[df_raw$evento=="WSCAD" ,] # filter only one category
+
+df = df   %>% 
+  group_by( ano , tipo) %>% 
+  summarise(n= n())
+df = spread(df, tipo, n)
+df
+
+```
+
+
+
+```{r}
+# Read raw csv data
+df_raw = read.csv("C:/Users/Elias/Documents/UNIOESTE/AnaliseDeDados/ProfLuiz/DadosWSCAD/resultados2.csv",  header=TRUE, sep=";") 
+
+
+# Filtering only WSCAD conference and just category of terms
+df = df_raw[df_raw$evento=="WSCAD" ,] # filter only one category
+
+df = df   %>% 
+  group_by( ano , tipo) %>% 
+  summarise(n= n())
+df = spread(df, tipo, n)
+df
+
+
+```
+
+## Correlation
+```{r}
+# exists corrlation between year and citation rate? it increase over the years?
+cor.test(df2$ano, df2$cit_ratio)
+
+l_m <- lm(formula = df2$ano ~ df2$cit_ratio)
+
+l_m
+
+summary(l_m)
+
+```
+
+
+

@@ -1,0 +1,538 @@
+Scanned Document
+Uso de arquitetura DSP para otimizar o 
+desempenho da reconstrução de imagens 
+tomográficas com wavelets 
+Pereira, M.F. L. 1, Cruvinel, P. E.Z, Saito, J. H. 1 
+1 Departamento de Computação, Universidade Federal de São Carlos 
+Rodovia Washington Luiz, km 235, São Carlos, SP Brasil. 
+{ mauricio@dc.ufscar.br} 
+{saito@dc.ufscar.br} 
+2 Embrapa Instrumentação Agropecuária 
+Rua XV de Novembro, 1642, São Carlos, SP, Brasil. 
+{ cruvinel @cnpdia.embrapa.br} 
+Resumo-Esse trabalho apresenta um sistema para reconstrução de 
+imagens tomográficas usando uma plataforma paralela 
+dedicada para o minitomógrafo de solos da Embrapa 
+Instrumentação Agropecuária. Foram utilizados dois 
+processadores TMS320C40 acoplados a módulos TIM-40 em 
+uma placa HEPC2E. No desenvolvimento do software utilizouse uma combinação das ferramentas Code Composer da Texas 
+lnstruments, da linguagem C Paralela da 3L e do Borland 
+Builder C++. As tarefas de reconstrução 20 e 3D foram 
+distribuídos entre os processadores e utilizou-se a memória 
+cache dos processadores para diminuição das taxa de perda e 
+aumentar tanto o poder de processamento quanto à velocidade 
+do sistema. Resultados com dados de amostras tomográficas 
+reais utilizando o método de retroprojeção mostram boa 
+performance, com uma redução de aproximadamente 80% do 
+tempo de reconstrução demandado em plataforma 
+convencional com um microprocessador de 200 MHz. 
+Palavras-chav~DSP, C Paralelo, Aplicações Agrícolas, 
+Reconstrução de Imagens Tomográficas, TMS320C40. 
+AbstractThis work presents a system for tomographic image 
+reconstruction using a parallel platform dedicated to the 
+minitomograph scanner for soil science developed by the 
+Embrapa Agricultural lnstrumentation Center. The 
+TMS320C40 was used with two TIM-40 modules and the 
+software was developed by the combination of the Code 
+Composer tool, the Parallel C from 3L, and the Borland C++, 
+v. 4.0. The reconstruction tasks were distributed through the 
+processors and the cache on-chip was used to reduce the miss 
+rate and to increase both the processing power and the 
+system's speed. Results with real tomographic data indicate 
+that this method gives superior results, i.e., approximately 
+80% when compared to conventional backprojection 
+reconstruction methodology operating at 200 MHz with the 
+classical micro processed architecture. 
+Keyword.-DSP, Tomographic Image Reconstruction, 
+Parallel C, Agricultural Application, TMS320C40 
+I. INTRODUÇÃO 
+Em 1917, o matemático austríaco Radon foi o primeiro 
+a apresentar uma solução matemática das equações de 
+reconstrução de corpos a partir de projeções, isto é, a 
+determinação da função distribuição de densidade da região 
+estudada através de suas projeções. 
+Em aplicações médicas, o primeiro tomógrafo 
+computadorizado de raios X de caráter comercial foi 
+apresentado em 1973 por EMI Ltda [HOU 73] o que causou 
+um grande impacto no diagnóstico radiológico. Entretanto, 
+esse instrumento foi antecedido por um número de 
+experimentos e demonstrações menos sofisticadas. O 
+embrião da tomografia reconstrutiva de raios X pode ser 
+encontrado nos trabalhos de Takahashi [TAK 57] onde 
+foram eliminados os planos indesejáveis, colocando-se a 
+fonte de raios X e o filme no mesmo plano. Mas uma 
+importante contribuição ao desenvolvimento de tomógrafo 
+foi dada por Cormack, [COR 63] o qual desenvolveu a 
+técnica matemática para reconstruir imagens utilizando o 
+método da retroprojeção. Cormack, professor de Física da 
+University of Cape Town, em 1956 foi solicitado para 
+supervisionar o uso de isótopos radioativos no Groote 
+Schuur Hospital devido à demissão do físico do hospital. 
+Durante algumas semanas Cormack trabalhou com os 
+isótopos radioativos e acompanhou tratamentos de 
+radioterapia. Com base em experimentos e observações 
+formulou uma matriz de coeficientes para cortes seccionais 
+que poderia ser obtida pela medida da transmissão de raios 
+X em vários ângulos através de um corpo, com obtenção de 
+imagens de secções transversais. 
+No estudo de solos, a tomografia computadorizada se 
+tornou um novo método de investigação de sua composição 
+11 9 
+fís ico-química. Estes estudos foram introduzidos por 
+Petrovic LPET 82], Hainsworth e Aylmores [HAI 83] e por 
+Crestana [CRE 86]. 
+Este trabalho apresenta o desenvolvimento de um 
+sistema para reconstrução de imagens tomográficas, com 
+uso de uma plataforma paralela de dois módulos TIM-40 
+com processadores DSP TMS320C40 em uma placa 
+HEPC2E da Hunt Engineering. Foram utilizadas no 
+desenvolvimento dos módulos de reconstrução as 
+ferramentas Code Composer da Texas lnstruments, o 
+Borland Builder C++ 4.0 como ambientes de 
+desenvolvimento de interface gráfica e a linguagem C 
+Paralela da 3L no desenvolvimento das tarefas de 
+reconstrução 2D e 3D. O uso destas ferramentas permite a 
+implementação de algoritmos paralelos que distribuem 
+entre os processadores as tarefas de reconstrução e 
+visualização das imagens tomográficas. 
+Para reconstrução das imagens tomográficas utilizou-se 
+o método da retroprojeção que consiste em se traçar o 
+caminho inverso ao da tomografia, isto é, de retirar de cada 
+projeção a informação ou contribuição para a reconstrução 
+de um pixel da imagem reconstruída. A idéia desse 
+algoritmo é ilustrada na Fig. I. 
+Fig. I Ilustração do algoritmo de retroprojeção para reconstrução 
+de imagens tomográficas. 
+Adicionalmente ao algoritmo de retroprojeção filtrada 
+ut iliza-se a transformada wavelets unidimensional, a janela 
+de Hamming para fil tragem das projeções e outras técnicas 
+do processamento de imagens para melhorar a qualidade da 
+imagem resultante. O uso da transformada permite a 
+eliminação dos ruídos inerentes ao processo, sem perda de 
+detalhes importantes dos cortes, gerando dessa maneira 
+imagens de melhor qualidade de forma mais rápida [MIN 
+97] do que utilizando as técnicas de fi ltragens 
+convencionais de retroprojeção filtrada. 
+120 
+No sistema para reconstrução utilizou-se os algoritmos 
+propostos por Cruvinel e Minatel [MIN 97] [MIN 98] para 
+a busca de parâmetros de comparação entre as plataformas 
+convencionais e DSP e para se obter medidas de 
+desempenho tais como speedup. 
+11. OBJETIVOS 
+O objetivo deste trabalho fundamenta-se na busca de 
+experiência com a utilização da plataforma paralela de 
+DSP's C40 da Texas Jnstruments e de suas características 
+específicas, buscando di ferentes alternativas para 
+plataformas convencionais de um único processador na 
+reconstrução de imagens tomográficas. Aliado a isso se 
+busca também diminuir o tempo de cálculo e geração de 
+imagens tomográficas, tanto da reconstrução de cortes 
+tomográficos quanto dos volumes gerados através dos 
+cortes reconstruídos. Outra meta a ser alcançada por este 
+trabalho é a utilização das técnicas wavelets devido às suas 
+características de maior velocidade nas filtragens das 
+projeções quando comparada com as técnicas 
+convencionais. 
+111. MATERIAIS E MÉTODOS 
+Analisando-se a maioria dos trabalhos desenvolvidos 
+em na área de reconstrução tomográfica, percebe-se que 
+eles têm atuado principalmente no sentido de melhorar a 
+qualidade das imagens. De forma diferenciada ao demais 
+trabalhos, este buscou o desenvolvimento de algoritmos 
+paralelos que permitissem obter um alto poder de 
+processamento util izando as características dos 
+processadores DSP, que permitem geração de códigos 
+paralelos, e explorando as características da plataforma de 
+desenvolvimento e a linguagem C paralela da 3L. 
+O tomógrafo de raios-X e y na Embrapa Instrumentação 
+gera como resultados de suas tomografi as arquivos texto 
+em formato ASCII do tipo *.dat que contêm informações a 
+respeito de um corte na tomografia, tais como energia 
+utilizada, passo angular e outros, e os valores dos 
+coeficientes de atenuação das várias translações feitas em 
+cada rotação executada. As rotações variam com a de 
+modo que 0° ~a< 180°. A Fig. 2, a seguir, ilustra o 
+procedimento de varredura de um plano feita na amostra 
+pelo minitomógrafo da Embrapa. 
+Fig. 2 Esquema de varredura de um plano em uma amostra pelo 
+minitomógrafo da Embrapa. 
+Os arquivos gerados pelo tomógrafo são armazenados 
+em disco para posterior processamento. Nas plataformas 
+convencionais, esses arquivos são processados utilizando a 
+CPU do PC, porém, neste trabalho todos os cálculos 
+necessários para se reconstruir os cortes tomográficos, as 
+filtragens dos dados e a interpolação dos planos na 
+reconstrução tridimensional da amostra estão direcionados 
+para serem processados na plataforma DSP, deixando-se 
+para o processador do PC apenas as tarefas de 
+processamento da interface gráfica, comunicação com os 
+processadores DSP para acesso ao disco rígido e a 
+visualização das imagens bidimensionais e tridimensionais 
+Na Fig. 3, pode-se visualizar a estrutura da arquitetura DSP 
+desenvolvida para otimizar o desempenho da reconstrução 
+de imagens tomográficas. 
+-4---c:ií!l/5.'~ Mi.nitom.óg)'afo da Embrapa 
+<11111 f l:nshurnentaçã.o Agropecuária 
+dat 
+.Aimamwn.erdofVwumção das nsu:tados 
+< ' 1 I Rec~ ~ 
+P91i.c~ào<U ~as 
+pllililos IM' recoos~ão 
+cb5 ccrus taD.~icas 
+Rt canstruç ão 
+3D a putir dos 0 
+corus u 
+C40 C40 
+PlaUfonm DSP 
+Fig. 3 Dustração da arquitetura DSP utilizada no trabalho com 
+uma placa HEPC2E, com dois processadores TMS320C40, 
+acoplada a um PC. 
+Dentro da plataforma DSP existe um processador 
+responsável pelo gerenciamento dos programas carregados 
+no boot loader da placa. Esse processador é chamado de 
+root sendo responsável também pela comunicação das 
+tarefas de leitura/escrita com o processador do PC. A Fig. 4 
+121 
+ilustra mais detalhadamente como está estruturado o 
+trabalho. Percebe-se a existência de 2 processadores DSP 
+TMS320C40 acoplados a placa HEPC2E que está 
+conectada a placa-mãe do PC, através do barramento ISA. 
+Isso possibilita a comunicação e troca de dados entre os 
+processadores DSP e Pentium através do root. 
+HEPC2E 
+•........................ ······················ .... . . 
+: : 
+: ROOT : 
+t........................ .... . .. ..l 
+~dodM~i 
+~ ~ Pentium 
+L__j ~ 200MHz 
+EIS de 
+dados 
+Fig. 4 Dustração dos sistema de comunicação entre os 
+processadores DSP e Pentium em uma placa HEPC2E 
+Nos próximos tópicos são descritas as características 
+principais que compões essa arquitetura e a plataforma de 
+desenvolvimento, para permitir uma melhor compreensão 
+do trabalho e das formas como foram exploradas as 
+características da placa HEPC2E e dos processadores DSP 
+e da linguagem C Paralela. 
+A. O processador TMS320C40 
+O TMS320C40 é um processador fabricado pelo Texas 
+lnstruments, que possuí um alto poder de processamento e 
+uma estrutura de hardware específica para o tratamento de 
+sinais unidimensionais e imagens. A principal motivação 
+para o seu uso neste trabalho se encontra no fato de possuir 
+este hardware específico o que garante alto poder de 
+processamento matemático, para executar os cálculos 
+necessários na reconstrução das imagens tomográficas. 
+Possui [TEX 96] como principais características: 
+• Seis portas de comunicação; 
+• Seis canais de co-processador Direct Memory 
+Access (DMA); 
+• Único ciclo para conversão de ou para Formato 
+Ponto-Flutuante IEEE-754; 
+• Único ciclo para multiplicação de Ponto-Flutuante 
+de 40 bits e Inteiros de 32 bits; 
+• Códigos fontes compatíveis com TMS320C30; 
+• Doze registradores de 40 bits, oito registradores 
+auxiliares, 14 registradores de controle e dois 
+temporizadores; 
+• 2Kbytes Cache de Programa On-Chip e Duplo 
+Acesso em único ciclo de memória RAM para 
+incrementar a performance de acesso a memória; 
+• Espaço de endereçamento de 16 Gigabytes para 
+programas/dados/periféricos; 
+• Possui barramentos com separação interna de 
+programas, dados e co-processador DMA para 
+suportar a concorrência massiva de E/S de 
+'programas e dados, maximizando a performance 
+da Unidade Central de Processamento; 
+Dois barramentos de dados e endereços idênticos para 
+suportar o sistema de compartilhamento de memória e as 
+altas taxas de dados. 
+8. O módulo T/M-40 modelo HET40EX 
+Os módulos TIM-40 seguem o padrão da Texas 
+chamado Texas lnstruments Module (TIM) que tem um 
+tamanho padrão de módulo seguindo as especificações 
+definidas. Isso significa que módulos TIM têm um tamanho 
+e pinagem padrão que permitem que sejam totalmente 
+reutilizados em qualquer placa-mãe de padrão TIM-40. Isso 
+também significa que os módulos têm um 1D ROM que 
+permite a um software identificá-lo, configurá-lo de forma 
+correta além de suportar o formato JT AG para uso em 
+depuração e testes [HET 98]. 
+Nesta aplicação utilizou-se o módulo TIM-40 do 
+modelo HET40EX, mostrado na Fig. 5, fabricado pela Hunt 
+Engineering. Este modelo possui como características: 
+possibilidade de encaixe de processadores TMS320C40 de 
+40 ou 50 MHz; 4 Megabytes de EDRAM no barramento 
+local e 4 Megabytes de EDRAM no barramento global; 
+conector J3 que possibilita ao processador trabalhar com 
+c/ock fornecido pelo modulo ou pela placa-mãe; 6 portas 
+Comports; /D-ROM seguindo as especificações TIM-40; 
+virtualmente, tempo zero de espera por dados. 
+Fig. 5 Módulo TIM-40 modelo HET40EX 
+122 
+C. A placa HEPC2E 
+A placa HEPC2E, mostrada na Fig. 6 é uma placa de 
+interface ISA de 16 bits, de alta performance fabricada pela 
+Hunt Engineering com slots para de até 4 módulos TIM-40. 
+Cada slot TIM-40 com no mínimo 2 comports para conexão 
+externa. Através dela é possível também interconectar 
+várias outras placas HEPC2E ou outros modelos da Hunt 
+Enginnering, o que permite aumentar o poder de 
+processamento conforme a necessidade. 
+Fig. 6 Placa HEPC2E de interface ISA com capacidade para até 4 
+módulos T IM-40 utilizada neste trabalho 
+A placa habi lita ferramentas como Code Composer da 
+Texas a depurar os códigos nos processadores sem que seja 
+necessária a utilização de nenhuma placa extra. Todas as 
+conexões de comports da placa HEPC2E possuem buffers 
+para assegurar confiabilidade do sistema. 
+Todo o sistema é suportado pela API da Hunt 
+Engineering que permite instalar a placa tanto em ambiente 
+Windows 95/98 quanto Linux [HEP 98). 
+Além disso, a placa também é totalmente suportada pela 
+linguagem C Paralela da 3L e o Code Composer que 
+permitem configurar o numero de processadores que estão 
+sendo utilizados no processamento da aplicação. 
+D. Vantagens do uso de plataformas DSP em relaçcio às 
+plataformas convencionais 
+A exploração das características da plataforma através 
+do uso das ferramentas como a linguagem C Paralela da 3L 
+[PAR 95] permite obter bom desempenho em comparação 
+às mesmas aplicações sendo executadas em processadores 
+de uso geral, tais como os processadores Pentium da Intel e 
+K6 da AMO. Através dela é possível distribuir entre vários 
+processadores DSP as tarefas para executarem de forma 
+paralela. Além disso, a possibilidade de se utilizar à 
+memória cache on-chip dos processadores DSP, torna 
+possível aumentar a velocidade do processamento das 
+filtragens e cálculos como, por exemplo, cálculo de FFf, 
+uso de paletas de cores e tabelas de valores que tenham que 
+sempre ser utilizadas nos cálculos necessários para uma 
+aplicação. Outra característica importante da plataforma é a 
+separação dos dados nos bancos de dados globais e locais 
+dos módulos TIM-40. Essa separação faz com que os dados 
+que são utilizados em uma mesma operação, por estarem 
+em dois bancos de memória separados, estejam disponíveis 
+para serem utilizados em um único ciclo pelo processador. 
+Com isso é possível diminuir o número de ciclos ociosos do 
+processador (miss rate), diminuindo também a distância 
+existente entre a velocidade de processamento dos 
+processadores e a velocidade da memória. 
+Um software planejado para se ter acesso à memória 
+eficiente é necessariamente um bom programa, pois leva 
+em conta o tipo de hardware e o tipo de dados da aplicação 
+[GHO 97]. Porém tudo isso só é possível devido à presença 
+de um hardware que foi projetado levando em conta os 
+tipos de operações mais comumente realizadas, tais como 
+multiplicações, transformadas rápidas de Fourier (FFf) e 
+operações que geralmente requerem dois operandos para 
+serem realizadas. Assim essa integração entre hardware 
+específico e software nas aplicações que utilizam 
+processadores DSP, permite se obter um alto desempenho 
+nessas aplicações. 
+Levando-se em conta a organização e a estrutura de 
+hardware dos processadores de uso geral e DSP, [LIL 96] 
+pode-se fazer uma comparação entre estas duas arquiteturas 
+e. v~r as vantagens do uso dos processadores digitais de 
+sma1s. Esta comparação é mostrada na Tabela I. 
+TABELA I 
+UMA COMPARAÇÃO ENTRE PROCESSADORES DSP E 
+MICROPROCESSADORES EM RELAÇÃO ÀS APLICAÇÕES DE 
+PROCESSAMENTO DE IMAGENS 
+DSP Micro 
+processadores 
+Levam em conta os Operações comuns do 
+Unidade tipos de operações e PIS levam um grande 
+Aritmética dados mais número de ciclos para 
+utilizados. serem realizados. 
+Barramento Arquitetura Harvard Arquitetura Von 
+Neumann 
+Geradores de Cálculo dos endereços 
+Endereçamento endereços, em demanda urna parte 
+hardware. do tempo de 
+processamento. 
+Dados e instruções Vários níveis de 
+Memória separados. coche para tentar 
+Múltiplos acessos aumentar a velocidade 
+por ciclo. de processamento. 
+123 
+IV. EXPLORANDO AS CARACTERÍSTICAS DA PLATAFORMA 
+DSP E DA APLICAÇÃO 
+A linguagem C Paralela possui arquivos de 
+configuração que permitem distribuir as tarefas entre os 
+processadores da placa HEPC2E. Em C Paralelo, cada 
+tarefa corresponde a uma função main( ) dos arquivos 
+fonte. A linguagem possibilita a criação de uma tarefa 
+principal, denominada master, que é responsável pela 
+geração e distribuição de tarefas menores, denominados 
+workers, que aproveitam de forma otimizada o poder de 
+processamento. Esse modelo de paralelização é conhecido 
+p~r. modelo master-worker. Na reconstrução das imagens é 
+utilizado esse modelo de paralelização para reconstrução 
+tri~im~nsional. Desse modo cada passo da reconstrução é 
+atnbUJdo a uma worker, possibilitando que todos os 
+processadores sejam utilizados ao máximo. Este modelo 
+também permite que sejam acoplados mais processadores 
+sem que haja necessidade de alterações nos arquivos de 
+configuração e sem que haja necessidade de recompilação 
+dos arquivos com código-fonte [PAR 95]. 
+Um outro tipo de otimização utilizada foi o uso dos 2 
+bancos de memória coche de cada processador para 
+armazenagem de valores pré-calculados. Essa é uma das 
+vantagens oferecidas pela linguagem C paralela que 
+P?s~ibil_ita a?roveitar este recurso de hardware para 
+diminuir o numero de ciclos em espera do processador. No 
+desenvolvimento da aplicação utilizou-se este recurso 
+armazenagem da tabela de senos e co-senos utilizada na 
+filtragem das ~rojeções com uso de janela de Hamming, 
+onde há necessidade de uso da transformada de Fourier. 
+Na linguagem C paralela é possível se colocar esses 
+dados na memória cache com o uso da sintaxe abaixo: 
+struct tab { 
+double Sen[256]; 
+double Cos[256]; 
+} Ttab = (struct * tab) (Ox02ff800 ); 
+O uso de endereço (Ox02ff800) é predeterminado para o 
+uso da memória cache, que tem espaço restrito, apenas 2 
+Kbytes por processador. O uso da tabela de senos e cosenos nesse espaço da memória ajuda a diminuir em até 1 O 
+vezes o tempo de processamento de uma FFr quando 
+comparada ao uso da mesma tabela nos bancos de memória 
+dos módulos TIM-40. Aliado a essa estrutura, também é 
+possível nos arquivos de configuração e através da forma de 
+dec_lara!ão das_ variáveis no código fonte, determinar quais 
+vanáveis ficarao no banco de memória global e local dos 
+módulos TIM. Essa separação é fundamental um bom 
+aproveitamento da arquitetura Harvard da plataforma, que 
+permite que dois dados estejam disponíveis na memória no 
+mesmo ciclo quando forem requisitados pelo processador. 
+V. RESULTADOS 
+Como resultados, foram obtidas duas ferramentas para 
+manipulação e comunicação dos dados da plataforma OSP 
+com o PC e para visualização bidimensional e 
+tridimensional dos cortes e das amostras reconstruídas. Na 
+geração dessas ferramentas foi utilizada a linguagem C 
+Paralela, para gerS}ção dos módulos de reconstrução e de 
+interpolação dos dados gerados pelo tomógrafo. Para 
+criação da interface gráfica usou-se a ferramenta Borland 
+Builder C++, que permitiu total integração com a 
+plataforma OSP. 
+Umas das ferramentas é mostrada na Fig. 7 . Nela podese selecionar quais dados serão aplicados nos algoritmos de 
+reconstrução na plataforma OSP, através do uso de janelas 
+e caixas de seleção. A ferramenta permite total controle da 
+plataforma OSP, bem como permite acompanhar estado 
+atual da reconstrução. Além disso, é possível selecionar 
+entre os três tipos de filtragem nos dados e visualizar os 
+dados em 256 tons que podem ser tons de cinza ou 
+pseudocores. Os cortes podem ser salvos em formato 
+Bitmap para Windows (*.bmp) ou em formato JPEG para 
+análise posterior. Nesta ferramenta também é possível a 
+seleção dos cortes reconstruídos para geração 
+tridimensional da amostra tomografada. O método de 
+interpolação utilizado é a interpolação por B-Wavelets para 
+geração dos volumes. Todos os cálculos são executados em 
+paralelo, na plataforma OSP e como o algoritmo paralelo 
+seque o modelo master-worker, o acréscimo de mais 
+processadores pode ajudar a aumentar a performance do 
+sistema. 
+A outra ferramenta desenvolvida nesse trabalho, 
+mostrada na Fig. 8, é a ferramenta de visualização 
+tridimensional dos dados dos cortes interpolados, que 
+permite mais interatividade do usuário na visualização dos 
+dados reconstruídos. Essa ferramenta não faz uso da 
+plataforma OSP, mas agiliza a visualização dos objetos 30 
+devido às facilidades implementadas. Em seu 
+desenvolvimento utilizaram-se os recursos da biblioteca 
+gráfica OpenGL. Além disso, nela é possível visualizar as 
+imagens bidimensionais de cortes transversais, coronais e 
+sagitais do objeto 30 . 
+124 
+n"''"""''''-~-~·'• ,, ,,, . .. ~,v~·•••''' M• •'·l •• 
+, ...... "r••• 
+[I \lln..1>' IW "" , I . ,., .,., " o t. 1 ! .. 
+lo• I 11 1 1•'' 
+w ,,_,.,.,H • t 
+lu>! o l o~ 
+:,; ·:..',, ·.~:;)• .... '""'" ' l 
+...... ,.._"' . 
+-:.» ...... 
+10 3) J) 
+~.,..-~, ....... ,., ........ 1 
+boll} .. ,p,..-juxm I>A2.11-1 
+Fig. 7 Ferramenta gráfica para utilização da plataforma DSP e 
+visualização dos cortes reconstruídos. 
+Etri• uf\'•-::. 
+u.,...,.,..... ... ederal 
+IDWv.IDCJIMiç.lo A~ .t. Sla Carlo. 
+SpcclrWD 
+......................... :r ..................... ••z 
+-.. f1l]l :.:-:.._ 
+.... ~ "-•(.11 liMO 
+Fig. 8 Ferramenta de visualização tridimensional dos 
+objetos reconstruídos e de cortes transversais, sagitais e 
+coronais 
+Na avaliação de desempenho da plataforma OSP 
+utilizaram-se dois conjuntos de 7 amostras de cortes 
+tomográficos, com imagens resolução de 40x40 pixels e 
+50x50 pixels . Na reconstrução dessas imagens utilizou-se a 
+fi ltragem por transformada wavelets unidimensional e na 
+interpolação foram inseridos 5 planos entre cada plano 
+reconstruídos, gerando imagens tridimensionais com 37 
+planos. Foram retiradas medidas de tempo das aplicações 
+com a inserção de código em pontos que não interfiram na 
+medida de desempenho das aplicações. Essas medidas 
+foram tiradas do mesmo ponto do código nas duas 
+plataformas e levam em conta apenas o tempo de cálculo 
+das reconstruções, desconsiderando os tempos de acesso a 
+disco. As imagens de resolução 40x40 pixels apresentaram 
+ganho 73% do tempo em relação ao mesmo conjunto 
+reconstruído em arquitetura convencional na aplicação dos 
+algoritmos de reconstrução. No outro conjunto de 7 
+amostras de cortes tomográficos, com imagens de resolução 
+de 50x50 pixels, foi aplicado a mesma configuração para 
+reconstrução. Nessas imagens de resolução 50x50 o ganho 
+apresentado foi de 80 % em relação à plataforma 
+convencional . 
+Abaixo na Fig. 9 mostra-se o gráfico de comparação das 
+medidas de desempenho obtidas na reconstrução das 
+imagens tomográficas na duas plataformas. 
+Comparação de desempenho entre as plataformas 
+DSP e convencional na reconstrução de Imagens 
+tomográflcas 
+40 .,....-------------, 
+~ 30 
+CDSP o 
+~ 20 +--QI 
+1- 10 .l--..1 .•"11"' 
+• Convencional 
+40x40 50x50 
+Resolução da Imagem 
+Fig. 9 Gráfico de comparação entre as arquiteturas paralela e 
+convencional 
+VI. CONCLUSÃO 
+Os resultados mostram o desenvolvimento de uma 
+arquitetura DSP para ottmtzar o desempenho de 
+reconstrução de imagens tomográficas de um 
+minitomógrafo dedicado à agricultura. A arquitetura 
+apresentou diversos recursos de hardware e software que 
+têm sido explorados permitindo ganho de desempenho da 
+ordem de 80% em comparação com as arquiteturas 
+convencionais. Além disso, o uso da linguagem C Paralela 
+permitiu explorar melhor o hardware de forma a diminuir a 
+taxa de perdas de ciclos do processador. Também foi 
+possível perceber que ainda existem possibilidades de se 
+melhorar as configurações das tarefas e das estruturas de 
+dados nos bancos de memória de forma a diminuir o 
+número de ciclos perdidos pelo processador. O uso de 
+algoritmos e plataformas paralelas para a reconstrução de 
+125 
+imagens mostrou-se como uma alternativa viável para a 
+solução de problemas dinâmicos do ambiente agrícola. 
+A GRADECIMENTOS 
+Os autores agradecem a CAPES e a Embrapa 
+Instrumentação Agropecuária pelo suporte financeiro ao 
+projeto. 

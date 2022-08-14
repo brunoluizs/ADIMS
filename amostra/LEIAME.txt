@@ -1,0 +1,61 @@
+Orientações:
+============
+
+Fazer as buscas pelos termos como estão no arquivo termos_busca.txt, com acento e tudo.
+
+A busca deve ser case insensitive e sem correspondência exata, i.e., a palavra não precisa ser exatamente igual ao termo de busca, pode corresponder ao plural e termos relacionados
+    termo: teste
+    correspondência: testes
+
+    termo: valor p
+    correspondência: valor principal ou valor pequeno (nesses casos, contabilizar e adicionar um comentário na planilha - célula correspondente indicando qual foi o problema)
+
+    Outros exemplos que estão OK (contabilizar s/ comentário): eficiência com deficiência, amostra com amostras ou amostragem, disponibilidade com indisponibilidade, bps com suas variações (k,m,g, etc)
+
+Quando houver OR na string de busca, quebrar em pesquias separadas.
+    teste OR experimento OR simulação, viram as 3 buscas:
+    teste
+    experimento
+    simulação
+
+Quando houver placeholder, interpretar a regex e gerar as buscas correspondentes:
+    teste[ -]?t
+        teste t
+        teste-t
+
+Não contar as ocorrências nas referências bibliográficas pois estou trabalhando para removê-las do TXT, em alguns artigos já consegui. 
+
+Dicas:
+======
+
+No caso dos testes, pesquisei por
+    teste e anotei as ocorrências em TE
+E como estava passando resultado por resultado, para ver se havia alguma inconsistência, já conseguia ver se tinha correspondência com:
+    teste U (TU) e
+    teste[ -]?t (TT
+
+
+Observações:
+============
+
+    Se possível, passem ocorrência por ocorrência e anotem qualquer coisa estranha que identificarem
+
+    Dependendo o leitor de PDF ele ignora os acentos na busca, desconsidere os resultados que não correspondem ao termo de busca (ex. google chrome)
+
+    Dependendo do leitor de PDF ele converte alguns caracteres do PDF em uma codificação diferente da string de busca, se possível busque sem caracteres acentuados
+        simulação     -> simula
+        desvio padrão -> desvio padr
+    * Mas na hora de registrar as correspondências leve em conta se a acentuação está igual a do termo de busca
+        encontrei divergências entre os leitores que utilizei: google chrome, foxit linux e xreader
+        em alguns casos encontrei mais correspondências usando o arquivo *.tika.txt e um leitor que igualava as codificações (Xed)
+
+
+Codificação
+===========
+
+Apesar de visualmente muito parecidos (ou idênticos), os caracteres abaixo são diferentes
+ã -> Código: 227
+ã -> Código: 97 771
+
+E existem diversos outros na mesma situação...
+

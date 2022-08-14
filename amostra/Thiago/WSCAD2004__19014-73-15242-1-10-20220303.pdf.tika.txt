@@ -1,0 +1,462 @@
+Scanned Document
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+Checkpointing Quase-Síncrono no LAM/ MPI 
+Ulisses FUrquim Freire da Silva* Islene Calciolari Garcia 
+Universidade Estadual de Campinas 
+Caixa Postal6176 
+13083-970 Campinas , SP, Brasil 
+Te!: +55 19 3788 5845 Fax: +55 19 3788 5847 
+E-mail: { ulis ses . s ilva , islene }@ic . unicamp . br 
+Resumo 
+Atualmente, na área de computação de alto desempenho, um número crescente de aplicações distribuídas utiliza alguma biblioteca MP! (Message Passing Interface) 
+para a troca de mensagens. Desse modo, há uma crescente 
+demanda por mecanismos de tolerância a falhas para 
+aplicações que utilizem esse sistema de comunicação. 
+Nesse artigo, é discutida uma infra-estrutura para checkpointing quase-síncrono feita numa implementação livre 
+do padrão MP! como base para a construção de um sistema tolerante a falhas que utilize r·ecuperação por retmcesso de estado. 
+1. Introdução 
+Aplicações de várias áreas como programação inteira, genõmica, processamento de imagens, aerodinâmica, meteorologia e outras têm se beneficiado 
+da utilização de computação de alto desempenho, por 
+meio de processamento distribuído. Normalmente, essas aplicações executam por longos períodos de tempo e 
+a ocorrência de uma falha obriga o reinício do processamento. Assim, como a execução prolongada combinada com a utilização de recursos computacionais distribuídos aumenta a possibilidade de falhas durante o 
+processamento, há uma necessidade muito grande de 
+prover tolerância a falhas para aplicações distribuídas. 
+Uma maneira de minimizar os prejuízos de falhas em 
+processamentos distribuídos seria gravar checkpoints 
+globais consistentes da aplicação [12] durante a sua 
+execução e reiniciar o processamento a partir do checkpoínt global consistente gravado mais recente em caso 
+* Apoio parcial do CNPq e, atualmente, da FAPESP (processo 
+no. 03/01525-8) 
+161 
+de falha [14j . Nesse sistema tolerante a falhas baseado 
+em recuperação por retrocesso de estado, o mecanismo 
+de obtenção de checkpoínts (chamado de checkpointing) é encarregado de garantir a existência de chec:kpoints globais consistentes. 
+Aplicações distribuídas são constituídas de vários 
+processos espalhados pelos recursos computaciouais 
+existentes, e que se comunicam utilizando algum sistema de troca de mensagens. Nos últimos auos, o 
+MPI [4J tem se estabelecido como um padrão de biblioteca de comunicação utilizado em aplicações distribuídas. O objetivo deste artigo é discutir o projeto e a implementação de uma infra-estrutura para 
+checkpointing quase-síncrono [20j na biblioteca MP! 
+conhecida como LAM [3J (Loca/ Area Mu/ticomputer). 
+Também será descrita nesse artigo, urna arquitetura. de 
+software para recuperação de falhas por retrocesso de 
+estado, que irá utilizar a infra-estrutura para checlcpoíntíng quase-síncrono já implementada. 
+Apesar de existir uma implementação do algoritmo 
+de Chandy e Lamport [12] no LAM/MPI [23] , este não 
+é controlado pelos processos da aplicação, mas sim externamente. Além disso, sendo um protocolo de cileckpointing síncrono, este também interrompe a execução 
+normal da aplicação. Assim, protocolos de checkpointing quase-síncronos tornam-se atrativos, uma vez que 
+não interrompem a execução normal da aplicação e 
+também permitem que a aplicação controle a gravação 
+de alguns checkpoints chamados de básicos. 
+Esta seção introduziu a motivação e o objetivo uesse 
+artigo. A Seção 2 introduz checkpoínting e ru:; diferenças entre as suas abordagens. Na Seção 3 são apresentados alguns trabalhos relacionados. A Seção 4 descreve o ambiente LAM/MPI e a implementação existente do algoritmo de snaps/Jot distribuído de Chaudy 
+e Lamport. Na Seção 5 é descrita a infra-estrutura para 
+checkpoíntíng quase-síncrono que foi implementada no 
+LAM/MPI. A Seção 6 descreve uma arquitetura para 
+recuperação de falhas chamada CURUPIRA que irá utilizar a infra-estrutura descrita na Seção 5. Por fim, a 
+Seção 7 traça algumas considerações finais. 
+2. Checkpointing 
+Existem vários algoritmos na literatura para a construção de checkpoints globais consistentes, que podem 
+ser classificados segundo três abordagens: assíncrona, 
+síncrona e quase-síncrona. Estas abordagens diferem 
+na autonomia dada aos componentes da aplicação na 
+seleção dos checkpoints e na garantia de existência 
+de um checkpoint global consistente diferente daquele 
+representado pelos estados iniciais dos processos da 
+aplicação. 
+A abordagem assíncrona oferece total autonomia 
+para os processos da aplicação na seleção dos checkpoints. Porém, não há garantias quanto a formação de 
+um checkpoint global consistente a partir dos checkpoints selecionados. Este problema foi detectado por 
+Randell no contexto de recuperação de falhas por retrocesso de estado [22]. Em um cenário denominado 
+efeito dominó, uma aplicação pode ser obrigada a retroceder ao seu estado inicial, apesar de ter gravado 
+checkpoints ao longo da sua execução. 
+A abordagem síncrona garante a obtenção de um 
+checkpoint global consistente por meio da propagação 
+de mensagens de controle e da interrupção temporária 
+da execução dos processos [12, 19]. Esta abordagem 
+permite uma certa autonomia na seleção de checkpoints, mas exige sincronização de todos os processos, interrompendo a execução normal da aplicação. 
+Um algoritmo síncrono é o de Chandy e Lamport [12], 
+que grava um snapshot distribuído da aplicação, tratando também do recebimento de todas as mensagens 
+em trânsito no momento da gravação do snapslwt. 
+Por outro lado, a abordagem quase-síncrona permite 
+aliar uma total autonomia na seleção de checkpoínts 
+com a garantia de que um checkpoint global consistente da aplicação poderá ser formado. Os processos 
+selecionam checkpoints de maneira autônoma, denominados dJeckpoints básicos, mas eventualmente podem ser induzidos a selecionar checkpoints adicionais, 
+denominados checkpoints forçados, de acordo com informações de controle propagadas juntamente com as 
+mensagens da aplicação. Esta verificação da necessidade de gravar um checkpoint forçado está representada na Figura l. No diagrama espaço-tempo desta figura, os processos selecionam seus checkpoints básicos 
+(quadrados pretos} , e em determinado momento, o processo p 1 recebe uma mensagem de P2, e de acordo com 
+as informações de controle obtidas da mensagem, o proFoz do Iguaçu, 27 a 29 de Outubro de 2004 
+Figura 1. Possível indução de um checkpoint 
+forçado em um protocolo quase-síncrono 
+cesso Pl pode ser obrigado a gravar um clwc:kpoillt 
+forçado (quadrado hachurado). 
+Assim, percebe-se que os protocolos de clwckpuiuting quase-síncronos deixam a aplicação executar uormalmcnte e sem interrupções, permitiudo ::;iucrouizar 
+os processos apenas em caso de falhas. de IHOuú 411\' 
+cada processo retroceda para o seu checkpoiut pertencente ao checkpoint global cousisteut<· 1uai~ rl'CCiltl'. 
+Existem vários algoritmos quasc-síucronos. d<·utre os 
+quais pode-se citar o FDAS [28] (Fixed-Dcpvudcuc.vAftcr-Send). 
+3. Trabalhos re lacionados 
+Na literatura, pode-se encontrar implementações Je 
+checkpointing utilizadas para depuração distribuída. 
+migração de processos, recuperação de falhas por n·trocesso de estado. Entre estes trabalhos. o <Uuhiente Condor [2] usa um protocolo de dwd(}JUÍlll iug 
+síncrono para migrar processos c reali:.mr balauccamento de carga nos recursos computacionais ut ilizados. 
+Além disso, é possível gmvar checkpoints periódicos da 
+aplicação, de modo que a computação possa ser rc•trocedida para algum desses estados globais cousistellt\ ':-. 
+gravados na ocorrência de uma falha. 
+As implementações de clleckpointiug feitas para suportar aplicações que utilizam MPI difcre111 por scn•JJI 
+feitas ou em cima da biblioteca de passagcut de uJcusagens ou dentro dela. O CoCheck [26] é um exeutplo de 
+implementação feita sobre a biblioteca MPl, que usa 
+um protocolo de checkpointing síncrono baseado no a lgoritmo de Chandy e Lamport [12] para realizar migração de processos em um sistema distribuído. Já o 
+MPICH-V [5, 11] e o MPICH-GF [29] implementam 
+os protocolos de checkpointing dentro da biblioteca 
+MPI, com o propósito de oferecer recuperação de falhas por retrocesso de estado às apl icações. O .\IPlC'l-1V pode utilizar um protocolo assíncrono dt• c:lwdq)()iJJting ou o protocolo síncrouo de Chandy c LalllpurL. 1:'11quanto o MPICH-GF utiliza um protocolo síH<.TOilu similar ao de Chandy e Lamport. O MPICI-1-GF se i11w162 
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+gra ao Globus [6], para prover tolerância a falhas para 
+as aplicações que rodam nesse ambiente. 
+Além desses trabalhos, convém mencionar o RENEW [21], que é uma ferramenta para implementação 
+e teste de desempenho de protocolos de checkpoiJJting 
+e de recuperação por retrocesso de estado. O RENEW 
+exporta para as aplicações boa parte da API do MPI e 
+permite implementar protocolos síncronos, assíncronos 
+e quase-síncronos de checkpoíntíng. 
+Percebe-se que as implementações existentes de protocolos de checkpoíntíng ou têm o enfoque principal em 
+migração de processos e podem ser adaptadas para fornecer recuperação de falhas por retorocesso de estado, 
+como o Condor [2] e o CoCheck [26], ou têm o foco em 
+recuperação de falhas por retrocesso de estado, mas 
+implementam protocolos síncronos, como o MPICHV [5, 11] e o MPICH-GF [29] . Além disso, nesses ambientes, não é fácil a implementação de algum outro protocolo de checkpointing. O RENEW [21], por sua vez, 
+oferece um modo fácil de implementar qualquer protocolo de checkpointing, mas o seu objetivo é testar novos protocolos, e não ser um ambiente que ofereça tolerância a falhas para aplicações distribuídas usando 
+MP I. 
+4. Snapshot distribuído no LAM/ MPI 
+A implementação livre LAM do padrão MPI fornece 
+uma biblioteca para troca de men!:>agens e um ambiente 
+para controlar a execução de aplicações d istribuídas. 
+Antes de executar aplicações, o ambiente preci!:>a estar 
+rodando em todas as máquinas do sistema distribuído 
+utilizado. Para realizar essa tarefa, é utilizado o comando Jamboot, que inicia um daemon chamado Jamd 
+em cada uma das máquinas. Após esse passo, aplicações 
+previamente compiladas com um dos compiladores do 
+LAM podem ser executadas usando-se o comando mpirun, que se encarrega de transferir o código para cada 
+uma das máquinas e rodá-lo. Assim, uma aplicação chamada Teste com 3 processos no LAM/ MPI pode ser representada como na Figura 2. Os daemons lamds estão 
+conectados uns aos outros, assim como O!:i processos 
+da aplicação, que podem, então, comunicar-se diretamente. 
+Ainda na Figura 2, percebe-se alguns módulos 
+próprios da arquitetura do LAM/ MPI. Os módulos 
+CRLAM (CheckpoíntjRestart LAM), CRMPI (Checkpoínt/ Restart MPI) e RPI (Request Progressíon Interface) são responsáveis por partes específicas no ambiente e possuem, normalmente, implementações utilizando diferentes tecnologias. Assim, ao executar o comando mpirun, os módulos para as funções de CRLAM, CRMPI e RPI podem ser previamente escolhidos 
+na execução de uma determinada aplicação. O módulo 
+chamado de MPI corresponde à API do MPI, que illtplementa primit ivas como MPI..Send() , MPLR.ecv() e 
+outras. 
+Os módulos CRLAM e CRMPI fazem parte da iluplementação do algoritmo de Chaudy e Larnport presente no LAM/MPI [23]. Tai!:i módulos coordenam o 
+processo de gravação de um sna.pshot distribuído da 
+aplicação, que posteriormente pode ser aproveitado na 
+reexecução da aplicação. Ne!:ita implementação, quelll 
+controla a seleção dos snapshots é o usuário 011 alguw 
+programa externo à a plicação, que usando o eonm11do 
+Jam checkpoint requisita a gravação de um snapslwr distribuído de toda a aplicação. O comando lHmrestHI'l 
+permite que uma aplicação seja reexecutada. a part ir 
+de algum snapshot distribuído armazenado. 
+A requisição do comando Jamclwcl<poillt é euviaJa 
+ao módulo CRLAM do processo mpirun, que por sua 
+vez cria um esquema da aplicação distribuída que poderá ser usado para a sua reexecução, e envia um sinal 
+a todos os processos da aplicação. Este sinal é recebido pelo módulo CRMPI de cada um dos processos, 
+que então inicia a sincronização dos processos para que 
+todas as mensageus ern trânsito sejam recebidas e os estados sejam gravados. 
+163 
+O módulo RPI pre!:>ente nos proces!:>os da aplkaç<io 
+é responsável pela comunicação entrt' eles"' este\ itupl<·mentado em vária:; tecnologias de comuuicaçãu eutr<' 
+processos como: sockets TCP, sockcts UDP. tuetuória 
+compartilhada, etc. Além da função de comunicação. o 
+módulo R.Pl também participa do proce!:iso d<' gravação 
+do snapshot distribuído, garantindo que as mensageus 
+em trânsito sejam todas recebidas. 
+Os módulos CRLAM e CRMPI não gravam os estados dos processos, apenas coordenam a criação do 
+snapshot distribuído. A gTavação propriamente dita dos 
+estados dos processos é feita por algum mecauismo externo ao LAM/MPI e que é controlado pelos módulos 
+CRLAM e CRMPI. Um do!> mecanismos ut ilizados uu 
+LAM/MPI para a gravação do!> estados dos processos é o pacote chamado 13LCR [1, 13] (Bcrldey Labs 
+Clleckpoínt/ R estaJ·t). Este pacote de software é colllposto por alguns módulos para o kemel Linux [7] e 
+uma biblioteca que padroniza a gravação de estados de 
+processos. O BLCR também fornece transparência na 
+gravação do estado de um processo, pois os módulos inseridos no kernel Linux permitem o acesso direto às est ruturas de dados e a sua gravação em um arquivo. Assim, existe uma implementação dos módulos CRLAM 
+e CRMPI chamada de blcr (para ambos O!:i módulos). 
+que utiliza o pacote 13LCR para a gravação dos estados dos processos. Os módulos blcr aliado!> ao módulo 
+R.PI chamado de crtcp, que usa sockets TCP para u 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+Nó O Nó 1 Nó 2 
+-mpirun •C: --------- ----- ... ... ... ... --I I --- ---CRLAM -.. ---.. -.. -, , -I 
+.. 
+~-- --~ 
+-I lamd - lamd I , --lamd --- ----I ~-- ------- -··=---- - ----------Teste Teste Teste 
+MPI MPI MPI 
+CRMPI CRMPI CRMPI 
+RPI - - 1- - - RPI - - 1- - - RPI - - - -- 1- r- -- - - - - - Figura 2. Aplicação Teste com 3 processos executando no lAM /MP I 
+comunicação, permitem que snapshots distribuídos sejam criados de aplicações distribuídas de forma transparente. 
+5. Checkpointing quase-síncrono no 
+LAM/ MPI 
+A implementação da infra-estrut ura para checkpointing quase-síncrono dentro do LAM/MPI foi feita 
+alterando-se os módulos MPI, CRMPI e RPI para criar 
+um outro módulo chamado de CKPTQS (CllecKPoinTing Quase-Síncrono). Como optou-se por continuar a 
+utilizar o llLCR para gravar os estados dos processos, 
+mais precisamente, foram alterados os módulos blcr 
+(CRMPI), crtcp (RPI) e a API do MPI. Estas alterações estão representadas na Figura 3, que ilustra 
+um processo da aplicação Teste no LAM/ MPI modificado. Nesta infra-estrutura, o módulo CRLAM não é 
+utilizado, e apesar do comando mpimn continuar sendo 
+executado no Nó O, aquele comando foi retirado da ilustração apenas para simplificar a figura. 
+Antes de implementar a infra-estrutura , uma modelagem dos protocolos de checkpoin ting quase-síncronos 
+foi feita, de modo a saber quais as necessidades e 
+operações comuns a todos eles. Assim, um conj unto de 
+ações foi definido como sendo suficiente para implementar os algoritmos de clleckpointing quase-síncronos. Estas ações e o contexto onde elas são utilizadas estão representados na Figura 4. 
+Percebe-se, na Figura 4, que o módulo CKPTQS separa as ações específicas do protocolo de checkpoin164 
+Nó k 
+lamd 
+Teste 
+MPl 
+CRMPI CKPTQS -RPl 
+Figura 3. Processo da aplicação Teste executando 
+no LAM/ MPI modificado 
+ting quase-síncrono das demais partes do LAMf !viPI. 
+Desse modo, para ut ilizar um protoc·olo de dwckpuillting quase-síncrono é preciso apenas implelllCIILar as 
+suas ações específicas. 
+As a lterações feitas ua API do MPl estão iHtimamente relacionadas com as ações: "luicializa protocolo", "Fina liza protocolo" e '·Grava ciJcckpoiJJt 
+básico". A primeira precisa ser executada 4uaudo o 
+MPI é inicializado em cada processo. Isto ocorre com a 
+chamada da primit iva MPLinit(), que foi a lterada para 
+inicializar o módulo CKPTQS, que por sua vez executa 
+a ação "lnicializa protocolo" do algoritmo de c/Jeckpointing quase-síncrono ut ilizado. A segunda ação precisa ser executada quando o MPI é fi nalizado Clll ('ada 
+um dos processos da aplicação. Isto é feito pela priAnais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+lnicializa 
+MPI 
+c 
+K 
+p 
+T 
+Q 
+s 
+Ações do protocolo 
+lnicializa 
+protocolo 
+Grava checkpoint 
+básico 
+Finaliza 
+protocolo 
+Figura4. Ações de um protocolo de checkpointingquase-síncrono no LAM/ MPI modificado 
+mitiva MPLFinalize(), que foi alterada para chamar a 
+função de finalização do CKPTQS, que por sua vez executa a ação ''Finaliza protocolo" do algoritmo quasesíncrono. A terceira ação corresponde, na verdade, a 
+uma extensão da API do MPI para incluir a primitiva 
+MPLCheckpoint(), que ao ser executada, faz com que 
+o módulo CKPTQS execute a ação "Grava checkpoint 
+básico" do protocolo de checkpointing quase-síncrono. 
+No módulo blcr (CRMPI) , alterações foram feitas 
+apenas para inicia lizar o pacote BLCR, ação que antes era feita em outro módulo do LAM/ MPI. A biblioteca do BLCR também precisou ser alterada pru·a que 
+o CKPTQS pudesse ter um controle maior na gravação 
+dos estados dos processos em arquivos. 
+Por fim , as alterações feitas no módulo crtcp (RPI) 
+estão relacionadas com as ações: "Adiciona informação 
+de controle", ''Processa informação de controle" e 
+"Grava checkpoint forçado" . A primeira ação é utilizada quando uma mensagem vai ser enviada para outro 
+processo. Nesse momento, a ação "Adiciona informação 
+de controle" do algoritmo de clleckpointing é executada pru·a adicionar à mensagem a informação de controle pertinente ao protocolo utilizado. Depois desse 
+passo, a mensagem será enviada pela rede para o processo de destino. A segunda ação será executada pelo 
+módulo CKPTQS quando uma mensagem for recebida 
+de outro processo. Nesse instante, a informação de con165 
+trole será processada pelo protocolo de checkpoíntíng, 
+que poderá executru· a ação "Grava checkpoint forçado" 
+caso seja necessário. Posteriormente, a meusagem será 
+entregue para a aplicação. 
+A implementação atual foi feita usando-se a versão 
+7.0.6 do LAM/ MPI, que atualmente é a últ ima versão 
+estável dessa biblioteca, e a versão 0.2.1 do pacote 
+BLCR. Porém, a infra-estrutura implementada apresenta algumas limitações, principalmente, por ut il izar o pacote BLCR para a gravação dos estados dos 
+processos. Nessa operação, as informações sobre arquivos aber tos ou sockets não são levadas em consideração. Deste modo, aplicações que ut ilizem arquivos 
+ou comuniquem-se com outros processos sem ut ilizar as 
+primitivas do MPI não terão seu estado completamente 
+gravado. É factível supor que aplicações distribuídas 
+que utilizem o LAM/MPI para a troca de rneusagens. 
+não ut ilizam sockets diretamente. Porém, corno muitas dessas aplicações utilizam arquivos, uma versão <..lo 
+pacote BLCR com suporte a ru·quivos deverá ser utilizado em versões futuras da infra-estrutura. 
+6. Arquitetura de software Curupira 
+O CURUPIRA é uma arquitetura de software que 
+irá utilizru· a infra-estrutura para protocolos de checkpointing quase-síncronos implementada no LAM/MPI 
+juntamente com as funções de coleta de lixo e recuperação por retrocesso em um protótipo para fornecer tolerância a falhas para algumas aplicações distribuídas. 
+Em particular , será utilizado no CURUPIRA um 
+protocolo quase-síncrono que obedece à propriedade 
+RDT [28] (Rollback-Dependency Trackability). Protocolos dessa classe facili tam a construção de checkpoints 
+globais consistentes a partir de um conjunto de checkpoints. Além disso, o retrocesso em caso de falha é menor [8] e foi mostrado recentemente que estes protocolos também permitem que a coleta de lixo seja feita de 
+maneira autônoma pelos processos [24, 25]. 
+Protocolos RDT induzem um número maior de 
+checkpoints forçados que outras classes de protocolos 
+quase-síncronos [27]. Em decorrência desse fato, podese verificar na literatura da ár~a um esforço direcionado a reduzir este custo. 13aldoni, Helary e Raynal 
+propuseram uma condição que seria mínima! para garantir a propriedade RDT em tempo de execução [9]. 
+Eles também desenvolveram um protocolo que implementa esta condição com complexidade O(n2 ) , onde n 
+é o número de processos da aplicação [10]. 
+Entretanto, foi provado que a condição minimal para 
+garantir a propriedade RDT em tempo de execução 
+era na realidade bem mais simples [16] e pode ser implementada com complexidade O(n) [15, 17]. O protocolo que implementa esta condição minimal é chamado 
+RDT- minimal e será ut ilizado no CURUPIRA. 
+Além do protocolo de checkpointing, limitações de 
+espaço em memória estável tornam a atividade de coleta de lixo importante em arquiteturas que se proponham a tolerar falhas. Assim, para permitir a recuperação por retrocesso, apenas os cbeckpoints que poderão ser ut ilizados em uma eventual falha da aplicação 
+necessitam ser guardados. Os demais checkpoints são 
+considerados obsoletos e podem ser descartados. 
+Como o CURUPIRA irá utilizar um algoritmo de 
+checkpointing quase-síncrono e a característica dos protocolos com essa abordagem é a inexistência de um processo coordenador, é natural adotar uma política de 
+coleta de lixo que possua as mesmaS características. 
+Até há pouco tempo, achava-se que a única maneira 
+de se realizar a coleta de lixo seria de forma centralizada. Porém, recentemente, foi provado que a coleta 
+de lixo pode ser feita de forma autônoma quando acoplada a protocolos da classe RDT [24, 25] . O espaço necessário para armazenamento local é de no máximo n 
+checkpoints por processo, sendo que o armazenamento 
+global também é proporcional a n2 . O algoritmo proposto é denominado RDT- LGC (RDT- Local Ga.rbage 
+Collection) e utiliza a informação propagada. por vetores de dependência para determinar quais d1eckpoints 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+ainda podem ser necessários. Este algoritmo talllbém 
+será utilizado na. implementação do CURUPIRA. 
+Para completar a arquitetura, um mecanismo simples de recuperação por ret rocesso será implementado. 
+Esta é uma atividade que pode ser feita de forma 
+centralizada por qualquer processo da aplicação. Para 
+tanto, o checkpoint global consistente mais recentt:' deverá ser calculado e todos os processos deverão couwrdar em retroceder para o seu checkpoint pertecente ao 
+corte global calculado. 
+O protocolo de recuperação será similar ao protocolo 
+de validação de duas fases (2PC- TwoPlwse Commit) 
+utilizado para coordenar a finalização de transações 
+atômicas [18, pp. 562-572]. Na primeira fase, o processo coordenador da recuperação pede a todos os outros que retrocedam. O coordenador decide pelo ret rocesso se, e somente se, todos os outros concordam e111 
+retroceder. Na segunda fase, o coordenador calcula a linha de recuperação (checkpoint global com;istcute 111ais 
+recente) e a sua decisão é propagada e executada por 
+todos os processos. 
+A Figura 5 é uma representação em alto nível dos 
+módulos do CuRUPIRA dent ro de um processo de ullla 
+aplicação distribuída. O LAM/MPI não está representado nessa figura apenas para não deixá-la muito complicada, mas o CURUPIRA será implementado dentro 
+dele. Naquela figura, é possível perceber que o módulo 
+CI<PTQS fará parte do módulo do CURUPIRA chamado de Coordenação, responsável pela separação dos 
+módulos de Checkpointing, Coleta de Lixo e Recuperação do código da própria Aplicação. 
+Os módulos de Checkpointing e Coleta de Lixo são 
+responsáveis pela implementação dos algoritmos RDT 
+minimal e RDT- LGC, respectivamente. Na F igura 5, 
+aqueles dois módulos não estão completamente separados, pois a implementação do algoritmo RDT- LGC 
+também pode ser feita juntamente com o protocolo de 
+checkpointing quase-síncrono da classe RDT. Por fim , 
+o módulo de Recuperação ficará encarregado do algoritmo de recuperação por retrocesso de estado, que será 
+executado na ocorrência de uma falha. 
+166 
+Após a implementação de todos os módulos do CuRUPIRA, pretende-se realizar testes comparativos cutre a implementação de checkpointing síncrono existente no LAM/MPI e a solução de checkpointing quasesíncrono provida pelo CURUP IRA. Uma aplicação de 
+teste deverá ser projetada e implementada, de modo 
+que as vantagens e desvantagens de cada urna das 
+soluções possam ser melhor analisadas. 
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+Processo k 
+CURUPIRA 
+I 
+... CKPTQS ... Checkpointing I I Coleta de Lixo 
+I 
+I 
+Aplicação Coordenação ~<~ 
+~ 
+I ... ~ Recuperação ~ Checkpoints .... ,... 
+Figura 5 . P rocesso de uma aplicação distribuída com o Curupira 
+7. Considerações finais 
+Nos últ imos anos, os sistemas computacionais de 
+a lto desempenho têm evoluído muito, principalmente 
+com o aparecimento de grandes sistemas distribuídos, 
+como clusters e grids. As aplicações que rodam nesses 
+sistemas também vêm evoluindo e apresentam além de 
+uma alta complexidade, códigos cada vez mais extensos. Todos esses fatores aumentam a possibilidade de 
+um falha interromper a execução de a lgum processamento distribuído. Tendo isso em mente, estudos em 
+sistemas distribuídos tolerantes a falhas têm se intensificado, e esse artigo apresentou uma infra-estrutura 
+para checkpointing quase-síncrono que foi implementada dentro da biblioteca LAM/ MPI [3], que é muito 
+utilizada para a construção de aplicações distribuídas. 
+Embora exista uma solução baseada num a lgoritmo de checkpointing síncrono implementada no 
+LAM/ MPI, esta não oferece muita autonomia para a 
+aplicação na seleção dos checkpoints. Além disso, não 
+há suporte para a implementação de algum outro a lgoritmo de checkpointing de maneira fácil. Assim, a infraestrutura para checkpointing quase-síncrono apresentada oferece maior flexibilidade na implementação de 
+novos protocolos e também maior autonomia para a 
+aplicação na gravação dos seus estados. Além disso, embora o propósito dessa infra-estrut ura seja a sua utilização numa arquitetura para recuperação de falhas 
+por retrocesso de estado, esta infra-estrutura também 
+pode ser utilizada por aplicações de outras áreas, como 
+depuração distribuída. 
+Além da infra-estrut ura para checkpointing quasesíncrono, este artigo também apresentou o modelo de 
+uma arquitetura de software para recuperação de falhas 
+por retrocesso de estado. Essa arquitetura, chamada 
+CURUPIRA, será implementada ut ilizando-se a infraestrutura para checkpointing quase-síncrono apresentada nesse artigo. Além disso, ela pode ser considerada completamente original, pois a utilização do a lgoritmo de coleta de lixo RDT- LGC [24, 25] permite que 
+durante uma execução sem falhas, nenhuma mensagem de controle precise ser trocada pelos processos da 
+aplicação. Desse modo, o funcionamento da arquitetura 
+influencia o mínimo possível na execução da apl icação c 
+permite oferecer alguma tolerância para as falhas ocorridas durante o processamento. 
+Referências 
+[1] Berkeley Lab Checkpoint/ Restart (BLCR). 1-lontt'page oficial: http: I /f t g .lbl. gov/twiki/bin/view/ 
+FTG/CheckpointRestart. (consultado em 06/ 08/ 2004). 
+[2] Condor Checkpointing. Homepage oficial: http: I /www. 
+cs. wis c. edu/ condor/ checkpointing .html. (consul167 
+tado em 06/ 08/2004). 
+[3] LAM/ MPI Parallel Comput ing. 
+cial: http: I / www .lam-mpi . org/. 
+06/ 08/2004). 
+Homepage ofi( consultado em 
+[4] Message Passing Interface Forum. Homepage oficial: http:// www.mpi-forum.org/. (consultado em 
+06/ 08/2004). 
+[5] MPICI-1-V. I-Iomepage oficial: http:/lwww.lri.frl 
+-gkiMPICH-V 1. (consultado em 06/08/2004). 
+[6] The Globus AIJiance. Homepage oficial: http: I l www . 
+gl obus. orgl. (consultado em 06/08/200tl). 
+[7] T he Linux Kernel Archives. I-lomepage olicial: http : I I 
+www. kernel. orgl. (consultado em 06/08/2004). 
+[8] A. Agbaria, H. Attiya, R Friedman, and R. Vitenberg. 
+Quantifying rollback propagat ion in distributed checkpointing. In Proceedings of lhe 20th Symposittm on Reliable Distributed Systems, pages 36- 45, New Orlenas, 
+2001. 
+[9} R. Baldoni, J. M. Helary, and M. Raynal. Rollbackdependency trackability: Visible characterizations. In 
+18th ACM Symposium on the Principies of Distributed 
+Computing, Atlanta, Estados Unidos, May 1999. 
+[10} R. Baldoni, J . M. Helary, and M. Raynal. Rollbackdependency trackability: A minimal characterization 
+and its protocol. Information and Computation, 
+165(2):144- 173, Mar. 2001. 
+[11] G. Bosilca, A. Bouteiller, F. Cappello, S. Djilali, 
+G. Fédak, C. Germain, T. Hérault, P. Lemarinier, 
+O. Lodygensky, F. Magniette, V. Néri, andA. Selikhov. 
+MPICH-V: Toward a Scalable Fault Tolerant MP! for 
+Volatile Nodes. In SuperComputing 2002, Baltimore, 
+Nov. 2002. 
+[12} M. Chandy and L. La mport. Distributed Snapshots: Determining Global States o f Distributed Systems. A CM 
+Trans. on Computing Systems, 3(1):63- 75, Feb. 1985. 
+[13] J. Duell, P. Hargrove, and E. Roman. The Design 
+and lmplementation of Berkeley Lab's Linux Checkpoint/ Restart. Publicação eletrônica disponível 
+e n1: http ://ftg.lbl.gov/twiki /pub/Whiteboard/ 
+CheckpointPapers/blcr. pdf , 2003. (consultado em 
+06/ 08/2004). 
+[14] E. N. Elnozahy, L. Alvisi, Y. M. Wang, and D. 8. 
+Johnson. A Survey of Rollback-Recovery Protocols in 
+Message- Passing Systems. ACM Computing Surveys, 
+3(34):375-408, September 2002. 
+[15} I. C. Garcia . Visões Progressivas de Computações 
+Distribuídas. PhD thesis, Ins tituto de ComputaçãoUnicamp, Dec. 2001. 
+[16} I. C. Garcia a nd L. E. Buzato. On the minimal characterization o f rollback-dependency trackability property. 
+In Proceedings o f lhe 21th IEEE Int. Conf. on Distributed Computing Sys tems, Phoenix, Arizona, EUA, Apr. 
+2001. 
+[17) I. C. Garcia and L. E. Buzato. An Efficient Checkpointing Protocol for the Minimal C haracterization of 
+Operat iona l Rollback-Dependency Trackability. In 23rd 
+Symposium on Reliable Distributed Systems, Oct. 2004. 
+[18} J. Gray and A. Reuter. Transaction Processing: Concepts and Techniques. Morgan Kaufmann, 1993. 
+[19} R. Koo and S. Toueg. Checkpoint ing and RollbackRecovery for Distributed Systems. IEEE Trans. onSoftware Engineering, 13:23- 31, Jan. 1987. 
+[20] D. Manivannan and M. Singhal. Quasi-Synchronous 
+Checkpointing: Models, Characterization, a nd Classification. IEEE Trans. Parallel Distrib. Syst. , 10(7):703713, 1999. 
+[21} N. Neves and W. K. F\ichs. RENEW: A Tool for Fast 
+and Efficient Implementation of Checkpoint Protocols. 
+In Symposium on Fault-Tolerant Computing, pages 5867, 1998. 
+[22] B. Randell. System Structure for Software Fa ult Tolera nce. IEEE TI·ans. on Software Engineering, 1(2):220232, June 1975. 
+168 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+[23] S. Sankaran, J. M. Squyres, 13 . Barrctt . A. l.tu,,,;. 
+daine, J. Duell , P. Hargrove, a nd E. R01mllt. Tlll' 
+LAM/ MPI Checkpoint/Restart Framc>work: S.vstt'IIIInitiated Checkpointing. In LA CSI Sympo:>úatl. Oct. 
+2003. 
+[24] R. Schmidt, I. Garcia, F. Pedone, and L. Buzato. Optimal asynchronous garbage collection for checkpoiming 
+protocols with rollback-dependency trackability. In 23rd 
+ACM Symposium on the Principies of Distributed Computing, July 2004. (Brief Announcement). 
+[25] R. M. Schmidt. Coleta de Lixo para Protocolos de 
+Checkpointing. Master's thesis, lns tituLO de Computação- Univers idade Estadual de Campinas. :W!J:l. 
+[26] G. Stellner. CoCheck: Checkpointing and Pruces:> :vligration for MP!. In Proceedings of the lOth lntenwl.zonal Parallel Processing Symposium (IPPS), Honolulu, 
+Hawaii, 1996. 
+[27] G. M. D. Vieira. Est udo comparativo de a lgorit mos 
+para Clleckpointing. Master's thesis, Ins tituto de Computação-Universidade Estadua l de Campinas, Dcc. 
+2001. 
+[28] Y. M. Wang. Consistent Global Checkpoints that Coutain a Given Set o f Local Checkpoints. IEEE Tmns. on 
+Computers, 46(4):456- 468, Apr. 1997. 
+[29] N. Woo, H. Y. Yeom, and T. Park . MP ICI-1-GF: 
+Transpa rent Checkpointing and Rollbock-Recovery for 
+GRID-ena bled MP! Processes. In 'f'he 2nd Wo·rk8h071 u·11 
+Hardware/Softw<L7'e Support fu.,. High Pe·tfonnance Scientific anel Enginee1·ing Cornp'Uling(SHPSEG'03). New 
+Orleans, Louisiana, Sept. 2003. 

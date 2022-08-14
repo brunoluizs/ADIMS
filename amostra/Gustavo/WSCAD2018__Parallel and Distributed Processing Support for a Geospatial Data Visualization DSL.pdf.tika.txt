@@ -1,0 +1,761 @@
+Parallel and Distributed Processing Support for a Geospatial Data Visualization DSL
+Parallel and Distributed Processing Support for a
+Geospatial Data Visualization DSL
+Endrius Ewald, Adriano Vogel, Cassiano Rista, Dalvan Griebler,
+Isabel Manssour, Luiz Gustavo Fernandes
+School of Technology, Pontifical Catholic University of Rio Grande do Sul (PUCRS),
+Porto Alegre, Brazil
+Email: {adriano.vogel, luis.rista, dalvan.griebler}@acad.pucrs.br
+Abstract—The amount of data generated worldwide related
+to geolocalization has exponentially increased. However, the
+fast processing of this amount of data is a challenge from
+the programming perspective, and many available solutions
+require learning a variety of tools and programming languages.
+This paper introduces the support for parallel and distributed
+processing in a DSL for Geospatial Data Visualization to speed
+up the data pre-processing phase. The results have shown the
+MPI version with dynamic data distribution performing better
+under medium and large data set files, while MPI-I/O version
+achieved the best performance with small data set files.
+I. INTRODUÇÃO
+Nos últimos anos, ocorreu um crescimento significativo
+no volume de dados digitais gerados em todo o planeta.
+Em dezembro de 2012, um estudo realizado pelo IDC (International Data Corporation) [1] estimou o tamanho do
+universo digital em cerca de 2.837 exabytes e com previsão
+de crescimento para incrı́veis 40,000 exabytes até 2020. Então,
+em 2020, de acordo com o IDC, o universo digital seria capaz
+de disponibilizar mais de 5 terabytes para cada pessoa do
+planeta. Esse estudo demonstra que estamos vivendo na era
+dos dados, ou seja, a era do big data.
+Essa situação tem gerado demandas por novas técnicas e
+ferramentas que transformem os dados armazenados e processados em conhecimento. Nesse contexto, o uso e o aprimoramento das técnicas de visualização de dados geoespaciais
+surgem como uma alternativa. As técnicas de visualização
+usualmente são aplicadas à informações geoespaciais, usando Sistemas de Informação Geográfica (SIG), bibliotecas
+de programação e frameworks. As técnicas de visualização
+de dados geoespaciais permitem a visualização de variáveis
+associadas a uma localização espacial, tais como a população
+e o ı́ndice de qualidade de vida de diferentes cidades, ou as
+vendas de uma empresa em uma região. Entre as técnicas
+de análise de dados geoespaciais, a visualização de dados
+se destaca por auxiliar os usuários a obterem informações
+rapidamente [2].
+É importante destacar que as ferramentas disponı́veis atualmente não fornecem as abstrações necessárias para a etapa
+de pré-processamento do pipeline de visualização [3]. Assim, mesmo que a visualização de dados ofereçam muitos
+benefı́cios, sua geração continua sendo um desafio [4]. Os
+usuários têm dificuldades em lidar com a grande quantidade
+de dados, uma vez que exige custos elevados de processamento
+e um grande esforço de programação para manipular os dados
+brutos e o suporte ao paralelismo.
+O pré-processamento tem um papel fundamental para a
+verificação de dados e erros, identificação de inconsistências
+e possı́veis incompletudes. Na literatura (Seção 2), o préprocessamento de grandes quantidades de dados é considerado
+um problema de desempenho e citado em diferentes trabalhos.
+Dessa forma, o uso de arquiteturas de processamento paralelo
+e distribuı́do aparecem como uma alternativa capaz de atenuar
+esse problema. Isso é possı́vel, graças ao uso de técnicas de
+programação paralela, que permitem a aceleração do processamento para as aplicações através dessas arquiteturas de alto
+desempenho. No entanto, esta não é uma tarefa trivial, pois
+requer habilidades especı́ficas em ferramentas, metodologias e
+modelagem [5].
+Este trabalho avalia estratégias para o pré-processamento
+distribuı́do, buscando melhorar a experiência de criação de
+visualizações de dados geoespaciais, reduzindo o tempo
+necessário para o pré-processamento dos dados e a
+implementação da visualização de dados. O objetivo é permitir
+o processamento paralelo e distribuı́do na DSL GMaVis, que
+até o presente momento, era capaz de realizar apenas o
+processamento paralelo em sistemas multi-core [6]. Assim, o
+trabalho apresenta as seguintes contribuições:
+• Um estudo e implementação do processamento paralelo
+e distribuı́do para DSL GMaVis.
+• Um conjunto de experimentos com diferentes
+implementações distribuı́das do pré-processamento
+e tamanhos de arquivos baseados em cargas realı́sticas.
+O artigo está organizado da seguinte forma. A Seção
+2 apresenta os trabalhos relacionados e a Seção 3 apresenta a linguagem da DSL GMaVis. A Seção 4 descreve a
+implementação do suporte ao pré-processamento distribuı́do.
+Os experimentos, resultados e discussões são mostrados na
+Seção 5. As conclusões deste trabalho são apresentadas na
+Seção 6.
+II. TRABALHOS RELACIONADOS
+Nessa seção são apresentadas diferentes abordagens de processamento paralelo e distribuı́do e DSLs para a visualização
+e pré-processamento de grandes quantidades de dados para
+221
+2018 Symposium on High Performance Computing Systems (WSCAD)
+978-1-7281-3772-8/18/$31.00 ©2018 IEEE
+DOI 10.1109/WSCAD.2018.00042
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+aplicações de geovisualização, incluindo também abordagens
+para o aprimoramento de desempenho com base nas caracterı́sticas de Entrada ou Saı́da (E/S).
+No trabalho de [7], foram abordadas operações de E/S
+coletivas sem bloqueio em MPI. A implementação em MPICH
+foi baseada no algoritmo coletivo de E/S ROMIO, substituindo as operações de bloqueio coletivo de E/S ou contrapartes não-bloqueantes. Os resultados indicaram um melhor
+desempenho que o bloqueio de E/S coletivo em termos de
+largura de banda de E/S, sendo capaz de sobrepor E/S com
+outras operações. [8] propõem uma extensão para o MPI3, permitindo determinar quais nós do sistema compartilham
+recursos comuns. A implementação realizada em MPICH
+fornece um mecanismo portátil para a descoberta de recursos,
+possibilitando determinar quais nós compartilham dispositivos
+locais mais rápidos. Os resultados obtidos com testes de
+benchmarks demonstraram a eficiência da abordagem para
+investigar a topologia de um sistema. [9] apresentam uma
+metodologia para avaliar o desempenho de aplicações paralelas
+com base nas caracterı́sticas de E/S da aplicação, requisitos
+e nı́veis de severidade. A implementação definiu o uso de
+cinco nı́veis de severidade considerando requisitos de E/S
+de aplicações paralelas e parâmetros do sistema de HPC.
+Resultados mostraram que a metodologia permite identificar
+se uma aplicação paralela é limitada pelo subsistema de E/S
+e identificar possı́veis causas do problema.
+[10] descreve o projeto e as caracterı́sticas do ParaView,
+que é uma ferramenta de código aberto multiplataforma que
+permite a visualização e análise de dados. No ParaView
+a manipulação de dados pode ser feita interativamente em
+3D ou através de processamento em lote. A ferramenta foi
+desenvolvida para analisar grandes conjuntos de dados usando
+recursos de computação de memória distribuı́da. [11] por sua
+vez, apresentam um projeto de expansão para a ferramenta
+de código aberto Visualization Toolkit (VTK). O projeto foi
+denominado Titan, e oferece suporte a inserção, processamento
+e visualização de dados. Além disso, a distribuição de dados,
+o processamento paralelo e a caracterı́stica cliente/servidor da
+ferramenta VTK fornecem uma plataforma escalável.
+[12] descrevem um sistema de análise visual, chamado
+Ambiente de Análise de Dados Exploratório (EDEN), com
+aplicação especı́fica para análise de grandes conjuntos de
+dados (Big Data) inerentes à ciência do clima. EDEN foi
+desenvolvido como ferramenta de análise visual interativa
+permitindo transformar dados em insights, melhorando assim
+a compreensão crı́tica dos processos do sistema terrestre.
+Resultados foram obtidos com base em estudos do mundo
+real usando conjuntos de pontos e simulações globais do modelo terrestre (CLM4). [13] apresentam uma arquitetura para
+aplicações de Big Data que permite a visualização interativa
+de mapas de calor em larga escala. A implementação feita
+em Hadoop, HBase, Spark e WebGL inclui um algoritmo
+distribuı́do para calcular um agrupamento de canopy. Os
+resultados comprovam a eficiência da abordagem em termos
+de escalabilidade horizontal e qualidade da visualização produzida.
+O estudo apresentado por [4] exploram o uso de tecnologias
+de análise geovisuais e computação paralela para problemas
+de otimização geoespacial. O desenvolvimento resultou em
+um conjunto de ferramentas geovisuais interativas capazes de
+direcionar dinamicamente a busca por otimização de forma interativa. Os experimentos revelam que a análise visual eficiente
+e a busca através do uso de árvores paralelas são ferramentas
+promissoras para a modelagem da alocação do uso da terra.
+Nesta seção foram apresentadas diferentes abordagens relacionadas com o pré-processamento e aprimoramento de desempenho de grandes quantidades de dados. Algumas abordagens [7], [8] são focadas no aprimoramento de desempenho
+de aplicações de E/S, enquanto outras [9] permitem identificar
+se a aplicação é limitada pelo subsistema de E/S. Algumas
+abordagens [10], [11] estavam preocupadas com a visualização
+e análise dos conjuntos de dados e outras em permitir a
+visualização interativa de aplicações Big Data [12], [13]. Por
+fim, [4] demonstram o uso de tecnologias de análise geovisuais
+através de árvores paralelas.
+É possı́vel observar que a literatura não apresenta estudos
+que otimizam o pré-processamento de grandes quantidades de
+dados levando em consideração uma DSL para um ambiente
+de processamento paralelo e distribuı́do. Além dessa lacuna
+observada, nesse estudo a GMaVis é estendida para suportar
+pré-processamento distribuı́do de dados. Ainda, diferentes
+implementações e tamanhos de arquivos são testados nesse
+estudo.
+III. GMAVIS DSL
+GMaVis [6] é uma DSL que fornece uma linguagem de
+especificação de alto nı́vel e tem como objetivo simplificar
+a criação de visualizações para dados geoespaciais em larga
+escala. A DSL permite aos usuários filtrar, classificar, formatar e especificar a visualização dos dados. Além disso, a
+GMaVis tem expressividade especı́fica para reduzir a complexidade e automatizar decisões e operações, tais como o
+pré-processamento de dados, o zoom e a localização do ponto
+inicial [14].
+A Listagem 1 ilustra um exemplo da linguagem de alto
+nı́vel da GMaVis, e a visualização resultante é apresentada na
+Figura 1. A primeira declaração na Linha 1 é um visualization:
+declaração, na qual o tipo de visualização escolhido para
+aparecer na visualização é o clusteredmap. Na Linha 2, o bloco
+settings começa com as declarações usadas para especificar
+detalhes dos aspectos visuais e recebe os campos onde os
+atributos importantes estão localizados. Por exemplo, a latitude
+e a longitude estão sendo declaradas nas Linhas 3 e 4, quando
+são informados seus valores, que correspondem à posição
+no conjunto de dados onde essas informações podem ser
+encontradas. A Linha 5 possui um marker-text para ser exibido
+como um texto no marcador quando o usuário clica nele. A
+declaração page-title na Linha 6 informa o tı́tulo que será
+colocado na visualização. Na Linha 7, uma declaração size
+é usada para definir o tamanho que a visualização ocupará
+na página Web. A declaração permite também valores como
+small ou medium.
+222
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+1 v i s u a l i z a t i o n : c l u s t e r e d m a p ;
+2 s e t t i n g s {
+3 l a t i t u d e : f i e l d 7 ;
+4 l o n g i t u d e : f i e l d 8 ;
+5 marker−t e x t : f i e l d 1 f i e l d 2 ;
+6 page− t i t l e : ” A i r p o r t s i n World ” ;
+7 s i z e : f u l l ;
+8 }
+9 data {
+10 f i l e : ” v i s c o d e s / a i r p o r t s . d a t a ” ;
+11 s t r u c t u r e {
+12 d e l i m i t e r : ’ , ’ ;
+13 end−r e g i s t e r : n e w l i n e ;
+14 }
+15 }
+Listagem 1. Código da DSL GMaVis para visualização de dados. Fig. 1. Visualização de dados de aeroportos.
+Há também um bloco data com declarações entre as Linhas
+9 a 15 que especificam os arquivos e filtros de entrada. Os
+usuários também podem incluir sub-blocos para a estrutura e
+classificação dos dados. O arquivo de entrada é declarado na
+Linha 10, recebendo uma string com o caminho do sistema
+para o arquivo. Esta declaração pode ser repetida várias vezes
+até que seja incluı́do todo o conjunto de dados. Além disso,
+um sub-bloco structure é declarado na linha 11, com um
+delimiter e uma declaração end-register especificando que a
+vı́rgula separa os valores do conjunto de dados de entrada e
+o caractere de nova linha separa os registros. Esta declaração
+pode receber qualquer caractere ou palavras-chave definidas,
+tais como: tab, comma, semicolon ou newline.
+A. Pré-processamento de Dados
+O modulo de pré-processamento de dados é responsável
+pela transformação dos dados de entrada, aplicando operações
+de filtragem e classificação. Este módulo permite à DSL abstrair a primeira fase do pipeline para a criação da visualização
+[3], evitando que os usuários tenham que tratar manualmente
+com grandes conjuntos de dados. O módulo funciona recebendo os dados de entrada, processando e salvando em
+um arquivo de saı́da os dados formatados e estruturados.
+As principais operações são Read, Process e Write, sendo
+definidas juntamente com outras operações na Tabela I.
+O compilador da DSL usa detalhes do código-fonte para
+gerar esse pré-proces-samento de dados através da linguagem
+de programação C++ [6]. A escolha do C++, é justificada
+pelo fato de permitir a criação de uma aplicação usando um
+vasto conjunto de interfaces de programação paralela, além de
+possibilitar aprimoramentos de baixo nı́vel no gerenciamento
+de memória e leitura de disco. Assim, o compilador gera um
+arquivo chamado data preprocessor.cpp. Sendo todo código
+gerado e executado sequencialmente, incluindo bibliotecas,
+constantes e tipos de dados. A execução da aplicação de
+geovisualização usando a GMaVis pode ser paralela usando
+o suporte ao paralelismo em ambientes multi-core oferecido
+pela DSL SPar [15]. Além disso, as informações relevantes
+do código-fonte da DSL são transformadas e escritas nesse
+arquivo.
+TABLE I
+OPERAÇÕES DE PRÉ-PROCESSAMENTO DE DADOS E SUAS DEFINIÇÕES.
+Definição Descrição
+F = {α1, α2, α3, ..., αn} F é um conjunto de arquivos
+de entrada a serem processados
+e α representa um único arquivo de um conjunto de dados
+particionado.
+Split(α) Divide um arquivo do conjunto
+de dados de F em N blocos.
+D = {d1, d2, d3, ..., dn} D é um conjunto de blocos
+de um único arquivo. Pode-se
+dizer que D é o resultado de
+uma função Split(α).
+Process(D) Processa um único arquivo D
+de F .
+Read(d) Abre e lê um bloco de dados d
+de um α em F .
+Filter(d) Filtra um determinado bloco de
+dados d em D, produzindo um
+conjunto de registros para criar
+a visualização.
+Classify(...) Classifica os resultados de
+Filter(...).
+Write(...) Salva os resultado de∑n
+i=1
+Process(F ), onde
+F representa um conjunto de
+arquivos (α) em um arquivo de
+saı́da a ser usado na geração
+da visualização.
+1 f u n c t i o n p r o c e s s ( a r g s . . . ) {
+2 Open ( i n f i l e ) ;
+3 Open ( o u t f i l e ) ;
+4 whi le ( ! i n f i l e . e o f ( ) ) {
+5 d s i z e = S p l i t ( i n f i l e ) ;
+6 d = Read ( i n f i l e , d s i z e ) ;
+7 f = F i l t e r ( d ) ;
+8 c = C l a s s i f y ( f ) ;
+9 Wr i t e ( c , o u t f i l e ) ;
+10 }
+11 C lose ( i n f i l e ) ;
+12 C lose ( o u t f i l e ) ;
+13 }
+Listagem 2. Representação da função de processamento em alto nı́vel.
+223
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+A Listagem 2 ilustra uma representação de codificação em
+alto nı́vel da função de processamento da GMaVis, onde é realizada a leitura de cada bloco do disco, filtragem, classificação
+e, finalmente a gravação dos dados no arquivo de saı́da. Para
+que isso ocorra, as operações iniciais são executadas entre
+as Linhas 5 e 6 e definem o inicio da região de leitura de
+dados. Enquanto que nas Linhas 7 e 8 os diferentes blocos
+de arquivos são processados, gerando uma string de dados
+com base na operações de filtragem e classificação. A última
+etapa consome a string, com base nas operações executadas
+nas Linha 9 realizando a gravação no arquivo de saı́da.
+O compilador do GCC é chamado para criar o executável
+de pré-processamento de dados. Após a compilação, o compilador da DSL chama o módulo de pré-processamento de
+dados e espera que sejam realizadas as transformações de
+dados, apresentando os dados pré-processados. Esta saı́da é
+carregada no gerador de visualização que usa as informações
+armazenadas a partir do código fonte. O analisador da DSL
+fornece informações sobre os detalhes especificados no bloco
+de configuração, como tamanho, tı́tulo, texto do marcador e
+visualizações a serem criadas.
+IV. MODELAGEM PARALELA DO PRÉ-PROCESSAMENTO
+NA DSL GMAVIS
+Conforme descrito por [6], a DSL GMaVis permite suporte
+à visualização geoespacial somente em arquiteturas multi-core
+através da geração de anotações de código [15]. Desse modo,
+para habilitar o suporte ao processamento paralelo e distribuı́do para o módulo de pré-processamento de dados, foram
+implementadas três variantes do modelo Mestre/Escravo. Uma
+versão em MPI estática, uma versão com distribuição dinâmica
+de tarefas e outra usando o MPI-I/O. Essas versões foram
+denominadas respectivamente: MPI-E, MPI-D e MPI-I/O.
+O MPI-E implementa a versão estática do modelo Mestre/Escravo em MPI. Nas Listagens 3 e 4 são apresentados os
+trechos de código das implementações Mestre e Escravo da
+versão MPI-E, respectivamente. Note que o processo principal
+(Mestre) realiza uma contagem inicial da quantidade de conjuntos de dados a serem processados. Após essa contagem,
+é realizada a divisão proporcional dos conjuntos de dados
+disponı́veis entre os processos (Escravos). Cabe destacar que
+o processo Mestre também exerce a função de Escravo, além
+da sua tarefa usual de coordenação e envio de trabalho aos
+processos Escravos. Outro aspecto importante diz respeito aos
+conjuntos de dados, que são distribuı́dos entre os processos de
+forma aleatória, não havendo nenhuma análise previa.
+A versão dinâmica do módulo de pré-processamento de dados implementa o modelo Mestre/Escravo denominado MPID. A versão dinâmica se refere a habilidade do processo
+Escravo solicitar tarefas dinamicamente. Isso não deve ser
+confundido com a capacidade de criação de novos processos
+(dinamicamente) em tempo de execução, caracterı́stica obtida
+através do uso da função MPI Comm spawn que não foi
+utilizada, presente desde a versão 2 do MPI. Assim, o processo
+principal (Mestre) do MPI-D realiza a distribuição dos conjuntos de dados entre os processos Escravos, conforme demonstrado na Listagem 5. Um vez realizada a fase de distribuição,
+inicia-se a fase de espera por parte do Mestre, que fica no
+aguardo do término da tarefa por parte de algum Escravo
+(demonstrado na Listagem 6), para somente então enviar uma
+nova tarefa para o Escravo. O aspecto dinâmico, está centrado
+no comportamento do Escravo, ou seja, a iniciativa de solicitar
+uma nova tarefa parte dinamicamente do Escravo. Obviamente,
+isso ocorre somente se ele já finalizou sua tarefa anteriormente
+recebida.
+Finalmente, a versão utilizando MPI-I/O é descrita. É importante ressaltar que a versão de MPI-I/O difere em alguns
+aspectos das demais versões (MPI-E e MPI-D), pelo fato
+de ter como principal forma de comunicação a troca de
+endereços entre os processos, pois há apenas um único arquivo
+compartilhado, com cada Escravo lendo e escrevendo em uma
+parte do arquivo. Assim, o processo principal (Listagem 7)
+calcula o tamanho total do conjunto de dados, realiza a divisão
+em partes (através da função calculateJob()) e envia o primeiro
+endereço do arquivo a ser processado para o primeiro escravo,
+representado na Listagem 8, e assim divide o arquivo com os
+demais processos, podendo ter novas iterações caso o número
+de chunks seja superior ao número de processos.
+Nesse caso, cada processo escravo realiza a leitura, processamento e escrita na parte designada a cada um. O Mestre
+continua sendo responsável pela distribuição de tarefas. No
+entanto, durante interações envia endereços a serem processados para eventuais processos escravos disponı́veis (através da
+função getFreeSlave()). Feito isso, realizam o processamento,
+classificação e filtragem dos dados. Em outras palavras, a
+implementação busca dividir o arquivo em chunks para cada
+escravo processar uma parte de forma independente e melhorar
+o desempenho a partir da leitura e escrita em partes. Os
+diversos arquivos de entrada são agrupados em um único
+arquivo compartilhado. Cada escravo lê e escreve no arquivo
+compartilhado através de troca de mensagens.
+V. EXPERIMENTOS
+Para a realização dos experimentos, foram utilizados essencialmente três conjuntos de dados obtidos através do Yahoo
+Flickr Creative Commons [16]: um conjunto de dados denominado de grande (4GB), um médio (1GB) e um pequeno
+(200MB). Além disso, os experimentos executados para verificar o desempenho utilizaram um número diferente de réplicas
+(grau de paralelismo) dependendo do tipo de carga (balanceada
+ou desbalanceada), sendo realizadas 15 repetições para cada
+experimento, as diferentes em nenhum cenário apresentaram
+um desvio padrão superior a 2%. O tamanho de cada chunk
+usado em todos os experimentos foi definido como 100 MB,
+sendo um tamanho de chunk representativo para os cenários
+testados.
+Os testes com carga balanceada utilizaram 32 réplicas
+de cada arquivo com carga grande (32x4GB), carga média
+(32x1GB) e carga pequena (32x200MB) para MPI-E, MPI-D
+e MPI-I/O. Por sua vez, os testes com carga desbalanceada
+combinaram o uso de diferentes cargas para MPI-E, MPID e MPI-I/O. Onde a carga grande (24x4GB + 27x1GB +
+224
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+1 MPI E MASTER( a r g s . . . ) {
+2 f i l e s <pa th >;
+3 numFi l e s = f i l e s . s i z e ( ) / np ;
+4 f o r ( k =1; k<np ; k ++){
+5 MPI : : Send ( numFi le s ) ;
+6 f o r ( i =0 ; i<numFi le s ; i ++){
+7 MPI : : Send ( f i l e s . pop ( ) ) ;
+8 }
+9 }
+10 whi le ( ! f i l e s . empty ( ) ) {
+11 f i l e = f i l e s . pop ( ) ;
+12 p r o c e s s ( f i l e ) ;
+13 }
+14 }
+Listagem 3. MPI-E (Processo Mestre).
+1 MPI E SLAVE ( a r g s . . . ) {
+2 f i l e s <pa th >;
+3 MPI : : Recv ( numFi le s ) ;
+4 f o r ( i =0 ; i<numFi le s ; i ++){
+5 MPI : : Recv ( p a t h ) ;
+6 f i l e s . add ( p a t h )
+7 }
+8 whi le ( ! f i l e s . empty ( ) ) {
+9 f i l e = f i l e s . pop ( ) ;
+10 p r o c e s s ( f i l e ) ;
+11 }
+12 }
+Listagem 4. MPI-E ( Processo Escravo).
+1 MPI D MASTER( a r g s . . . ) {
+2 f i l e s <pa th >;
+3 numFi l e s = f i l e s . s i z e ( ) / np ;
+4 f o r ( k =1; k<np ; k ++){
+5 MPI : : Send ( f i l e s . pop ( ) ) ;
+6 }
+7 f o r ( i =0 ; i<numFi le s ; i ++){
+8 MPI : : Recv ( f r e e s l a v e ) ;
+9 i f ( ! f i l e s . empty ( ) ) {
+10 MPI : : Send ( f i l e s . pop ( ) ) ;
+11 } e l s e {
+12 MPI : : Send ( end message ) ;
+13 }
+14 }
+15 }
+Listagem 5. MPI-D (Processo Mestre).
+1 MPI D SLAVE( a r g s . . . ) {
+2 MPI : : Recv ( f i l e , t a g ) ;
+3 whi le ( t a g != end message ) {
+4 f u n c t i o n p r o c e s s ( f i l e ) ;
+5 MPI : : Send ( f r e e s l a v e ) ;
+6 MPI : : Recv ( f i l e , t a g ) ;
+7 }
+8 }
+Listagem 6. MPI-D (Processo Escravo).
+1 MPI IO MASTER ( a r g s . . . ) {
+2 MPI : : Send ( p r i m e i r o P o n t e i r o ) ;
+3 whi le ( ha s J o b ) {
+4 MPI : : Recv ( t a g ) ;
+5 i f ( t a g == p o n t e i r o ) {
+6 c a l c u l a t e J o b ( ) ;
+7 i f ( ha s J o b ) {
+8 g e t F r e e S l a v e ( ) ;
+9 MPI : : Send ( p o n t e i r o ) ;
+10 } e l s e {
+11 MPI : : Send ( e n d S i g n a l ) ;
+12 }
+13 } e l s e i f ( t a g ==endRead ) {
+14 i f ( ha s J o b ) {
+15 MPI : : Send ( p o n t e i r o ) ;
+16 } e l s e {
+17 MPI : : Send ( e n d S i g n a l ) ;
+18 }
+19 }
+20 }
+21 }
+Listagem 7. MPI-IO (Mestre).
+1 MPI IO SLAVE ( a r g s . . . ) {
+2 MPI : : F i l e i n ;
+3 do{
+4 MPI : : Recv ( t a g ) ;
+5 i f ( t a g == p o n t e i r o ) {
+6 i n i c i o = p o n t e i r o ;
+7 f im = p o n t e i r o + chunk ;
+8 b u f f e r =
+9 i n . Read ( i n i c i o , f im ) ;
+10 p t r R e t o r n o =
+11 a j u s t a R e g i s t r o ( b u f f e r ) ;
+12 MPI : : Send ( p t r R e t o r n o ) ;
+13 p r o c e s s ( b u f f e r ) ;
+14 } e l s e i f ( t a g == e n d S i g n a l ) {
+15 MPI : : F i n a l i z e ( ) ;
+16 }
+17 } whi le ( t a g != endJob ) ;
+18 }
+Listagem 8. MPI-IO (Escravo).
+225
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+0
+500
+1000
+1500
+2000
+2500
+3000
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (32x4gb)
+MPI−E
+MPI−D
+MPI−IO
+(a) Carga grande balanceada.
+0
+ 200
+ 400
+ 600
+ 800
+1000
+ 1200
+ 1400
+ 1600
+ 1800
+ 2000
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (24x4gb+27x1gb+25x200mb)
+MPI−E
+MPI−D
+(b) Carga grande desbalanceada.
+Fig. 2. Módulo de pré-processamento de dados paralelo com carga grande.
+25x200MB), a carga média (6x4GB + 6x1GB + 10x200MB)
+e a carga pequena (1x4GB + 2x1GB + 2x200MB) foram
+definidas intencionalmente de modo a simular desbalanceamento dos conjuntos de dados. O número de arquivos bem
+como seus tamanhos foram definidos para que o resultado da
+soma dos arquivos totalizasse a mesma quantidade de dados
+(em Gigabytes) da carga balanceada.
+Em relação ao ambiente de execução, a infraestrutura consistiu de quatro nodos, sendo que cada nodo possui uma
+configuração com dois processadores Intel Xeon E5520 2.27GHz (cada um com 4 cores e 8 Hyper-Threads) e 16GB
+de memória RAM. A rede de interconexão utilizada foi uma
+Gigabit Ethernet. Além disso, utilizou-se o sistema operacional
+Ubuntu 14.04.4 LTS (GNU/Linux 3.13.0-86-genérico x86 64)
+e o módulo de pré-processamento de dados foi compilado a
+partir do GCC-5.3.0 sem nenhuma flag de otimização definida.
+É importante ressaltar que não foram realizados testes com
+carga desbalanceada para as versões de MPI-I/O, devido a
+implementação agrupar diferentes arquivos de entrada em um
+único arquivo e distribuir o processamento enviando chunks
+para os processos escravos, cada processo lê e escreve em uma
+porção do arquivo. Sendo assim, a versão de MPI I/O é efetiva
+também no cenário com diferentes tamanhos de arquivos. No
+entanto, o agrupamento e divisão desses arquivos em um único
+evita o desbalanceamento de carga, o desempenho seria o
+mesmo com arquivos de tamanhos idênticos.
+A Figura 2 ilustra as versões paralelas do módulo de préprocessamento de dados executando com carga de trabalho
+grande (balanceada e desbalanceada). A execução com 0 processos paralelos representa a execução sequencial. Na Figura
+2(a) é possı́vel observar o resultado do experimento com
+o uso da carga de trabalho balanceada. Note que MPI-E e
+MPI-D apresentaram uma curva de desempenho semelhante.
+A exceção ficou por conta de MPI-I/O que apresentou um
+desempenho inferior. No outro cenário apresentado na Figura
+2(b), com carga de trabalho desbalanceada, MPI-D se mostrou
+mais eficiente que MPI-E. Em relação a MPI-E, a diferença
+(pequena) de desempenho se torna mais evidente a partir do
+uso de 5 processos escravos.
+As versões paralelas do módulo de pré-processamento de
+dados executando com carga de trabalho média (balanceada e
+desbalanceada) são apresentadas na Figura 3. O experimento
+com carga balanceada (Figura 3(a)) apresentou novamente
+uma curva de desempenho praticamente igual para MPI-E e
+MPI-D. MPI-I/O se mostrou mais uma vez menos eficiente.
+No entanto, é possı́vel perceber uma aproximação de MPII/O com base em sua curva de desempenho. O experimento
+desbalanceado (3(b)) por sua vez, sinaliza uma tendência,
+onde as curvas de desempenho de MPI-E, MPI-D e MPI-I/O
+praticamente convergiram. MPI-D continuou como a versão
+mais eficiente, conseguindo superar em eficiência MPI-E entre
+3 e 21 processos escravos. O tempo total para execução de
+MPI-I/O continuou sendo maior.
+Para o último cenário, mostrado na Figura 4, foram executadas versões paralelas do módulo de pré-processamento
+de dados com carga de trabalho pequena (balanceada e desbalanceada). A Figura 4(a) apresenta o experimento realizado
+com cargas balanceadas. Nesse cenário, pode-se dizer que as
+três versões (MPI-E, MPI-D e MPI-I/O) tiveram resultados
+semelhantes de desempenho. Porém, o experimento realizado
+com carga pequena balanceada mostra o cenário MPI-I/O com
+desempenho levemente superior aos outros cenários. A sua
+curva de desempenho foi mais eficiente em relação a utilização
+de recursos de MPI-E e MPI-D. Esse comportamento se torna
+mais evidente a partir do uso de 5 processos escravos, se
+mantendo assim até o final da execução.
+A partir dos resultados obtidos, é possı́vel identificar
+tendências e perfazer algumas considerações. A versão de
+MPI-D claramente se mostrou mais eficiente com o uso
+de cargas grandes e médias (sejam balanceadas ou desbalanceadas). Esse resultado de certa forma já era esperado, uma
+vez que o comportamento dinâmico na distribuição das tarefas
+de MPI-D possibilita uma melhor utilização dos recursos.
+No entanto, com o uso de cargas pequenas balanceadas o
+MPI-I/O apresentou crescimento de desempenho da versão
+de MPI-I/O. A curva de desempenho mostrou uma utilização
+de recursos bastante acentuada. Isso ocorre devido ao MPII/O operar sobre um único arquivo compartilhado com todos
+os processos, que com tamanho pequeno tiveram um melhor
+balanceamento. Por outro lado, o MPI-I/O com um arquivo
+226
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:27:06 UTC from IEEE Xplore.  Restrictions apply. 
+0
+100
+200
+300
+400
+500
+600
+700
+800
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (32x1gb)
+MPI−E
+MPI−D
+MPI−IO
+(a) Carga média balanceada.
+50
+ 100
+ 150
+ 200
+ 250
+ 300
+ 350
+ 400
+ 450
+ 500
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (6x4gb+6x1gb+10x200mb)
+MPI−E
+MPI−D
+(b) Carga média desbalanceada.
+Fig. 3. Módulo de pré-processamento de dados paralelo com carga média.
+0
+ 10
+ 20
+ 30
+ 40
+ 50
+ 60
+ 70
+ 80
+ 90
+100
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (32x200mb)
+MPI−E
+MPI−D
+MPI−IO
+(a) Carga pequena balanceada.
+60
+65
+70
+75
+80
+85
+90
+95
+100
+0  5  10  15  20  25  30  35
+T
+e
+m
+p
+o
+ (
+se
+g
+u
+n
+d
+o
+s)
+Número de processos escravos
+Data Pre−processor − (1x4gb+2x1gb+2x200mb)
+MPI−E
+MPI−D
+(b) Carga pequena desbalanceada.
+Fig. 4. Módulo de pré-processamento de dados paralelo com carga pequena.
+maior, tem desempenho inferior, limitado pelo chunk do
+arquivo mais lento processado nos escravos e também pelo
+gargalo de desempenho nas operações de read e write de disco
+no arquivo compartilhado.
+VI. CONCLUSÕES
+Neste artigo foi apresentada uma proposta de suporte ao processamento paralelo e distribuı́do, com foco em uma DSL para
+visualização de grandes conjuntos de dados geoespaciais. Para
+isso, foram avaliadas diferentes implementações do padrão de
+programação distribuı́do MPI. O pré-processamento de dados
+é a etapa mais demorada para visualização de dados. Assim, o
+uso do processamento distribuı́do torna possı́vel evitar gargalos
+de desempenho de disco em um único nodo e potencialmente
+aumentar o desempenho com diversas operações simultâneas
+em diferentes nodos.
+Os resultados obtidos demonstram um desempenho superior
+da versão MPI-D com o uso de cargas de tamanho grande
+e médio. A abordagem de distribuição dinâmica de tarefas
+permitiu uma melhor utilização dos recursos, com cargas
+balanceadas e desbalanceadas. Por outro lado, a versão de
+MPI-I/O obteve o melhor resultado com cargas pequenas,
+mostrando que a carga de trabalho não foi limitada pelo
+subsistema de E/S, não havendo gargalos de desempenho
+devido ao seu tamanho reduzido.
+Futuramente, um objetivo é implementar novas técnicas em
+implementações do MPI-I/O. Ainda, pretende-se implementar
+uma versão de MPI adaptativo, ou seja, a versão deverá permitir a criação de processos em tempo de execução, permitindo
+assim explorar a elasticidade horizontal do ambiente. Para isso,
+pretende-se fazer uso do estilo de programação dinâmica do
+MPI-2.
+AGRADECIMENTOS
+Os autores gostariam de agradecer o suporte financeiro
+parcial das pesquisas para as seguintes instituições: PUCRS,
+CAPES e CNPq.

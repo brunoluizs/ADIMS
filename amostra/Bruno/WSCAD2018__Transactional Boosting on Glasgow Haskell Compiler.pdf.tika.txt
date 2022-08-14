@@ -1,0 +1,605 @@
+Transactional Boosting on Glasgow Haskell Compiler
+Transactional Boosting on
+Glasgow Haskell Compiler
+1st Jonathas A. O. Conceição
+Centro de Desenvolvimento Tecnológico (CDTec)
+Universidade Federal de Pelotas (UFPel)
+Pelotas - RS, Brazil
+jadoliveira@inf.ufpel.edu.br
+2nd André R. Du Bois
+Programa de Pós Graduação em Computação (PPGC)
+Universidade Federal de Pelotas (UFPel)
+Pelotas - RS, Brazil
+dubois@inf.ufpel.edu.br
+3rd Rodrigo G. Ribeiro
+Programa de Pós-Graduação em Ciência da Computação
+Universidade Federal de Ouro Preto (UFOP)
+Ouro Preto - MG, Brazil
+rodrigo@decsi.ufop.br
+Abstract—Transactional Boosting is a methodology used to
+transform highly concurrent linearizable actions into highly
+concurrent transactional actions, enabling their use within transactions. This methodology can be used as a way to avoid false
+conflicts, thus avoiding performance loss in some transactional
+applications. In this paper we present a STM Haskell extension,
+alongside the necessary extensions to the compiler’s Runtime
+System, that allows programmers to develop applications that
+utilizes Transactional Boosting, and thus validate the use of this
+methodology in Haskell.
+I. INTRODUÇÃO
+Software Transactional Memory (STM) é uma alternativa
+de alto nı́vel ao sistema de sincronização por locks. Nela todo
+acesso à memória compartilhada é agrupado como transações
+que podem executar de maneira concorrente. Se não houve
+conflito no acesso à memória compartilhada, ao fim da
+transação um commit é feito, tornando assim o conteúdo do
+endereço de memória público para o sistema. Caso ocorra
+algum conflito um abort é executado descartando qualquer
+alteração ao conteúdo da memória. Diferente da sincronização
+por locks, transações podem ser facilmente compostas e são
+livres de deadlocks [Harris et al. 2008].
+Memórias Transacionais funcionam através da criação de
+blocos atômicos onde alterações de dados são registradas para
+detecção de conflitos. Um conflito ocorre quando duas ou
+mais transações acessão o mesmo endereço e pelo menos um
+dos acessos é de escrita. Entretanto, essa forma de detecção
+de conflitos pode, em alguns casos, gerar falsos conflitos
+levando a uma perda de desempenho. Um exemplo seria
+quando duas transações modificam partes diferentes de uma
+lista encadeada [Sulzmann et al. 2009], [Herlihy and Koskinen
+2008]. Embora essas ações não conflitem, o sistema detecta
+um conflito já que uma transação modifica uma área de
+memória lida por outra transação. Este tipo de detecção de
+O presente trabalho foi realizado com apoio da Coordenação
+de Aperfeiçoamento de Pessoal de Nı́vel Superior - CAPES/Brasil
+88882.151433/2017-01 e da Fundação de Amparo à Pesquisa do Estado do
+Rio Grande do Sul - FAPERGS
+conflito pode ter grande impacto na performance quando
+se utiliza certos tipos de estruturas encadeadas. Por outro
+lado, utilizando sincronização por locks, ou mesmo algoritmos
+lock-free, programadores experientes podem alcançar um alto
+nı́vel de concorrência ao custo de complexidade no código.
+Transactional Boosting [Herlihy and Koskinen 2008] pode ser
+aplicado para transformar objetos linearmente concorrentes em
+objetos transacionalmente concorrentes, oferecendo assim uma
+solução para esses falsos conflitos.
+O objetivo deste trabalho é desenvolver uma biblioteca para
+Transactional Boosting em STM Haskell, permitindo assim a
+aplicação desta técnica de maneira nativa no Glasgow Haskell
+Compiler (GHC).
+As contribuições deste artigo são:
+• Desenvolvimento de uma nova primitiva que possibilita
+a aplicação da técnica de Transactional Boosting na
+biblioteca STM Haskell;
+• Extensão do RunTime System do GHC para dar suporte
+a tal primitiva;
+• Implementação de casos de uso da primitiva apresentada
+e análise do desempenho da mesma.
+O artigo é organizado da seguinte forma: A Seção II
+descreve a biblioteca STM Haskell; na Seção III o conceito de
+Transactional Boosting é apresentado juntamente com a nova
+primitiva desenvolvida; a Seção IV mostra três exemplos de
+aplicação da técnica; na Seção V as modificações necessárias
+no RunTime System do Haskell são descritas; a Seção VI apresenta os resultados de alguns experimentos feitos para avaliar
+nossa implementação; na Seção VII trabalhos relacionados
+são discutidos; por fim, na Seção VIII conclusões e trabalhos
+futuros são relatados.
+II. STM HASKELL
+STM Haskell [Harris et al. 2008] é uma biblioteca do
+Glasgow Haskell Compiler que provê primitivas para o uso
+de memórias transacionais em Haskell. O programador define
+ações transacionais que podem ser combinadas para gerar
+191
+2018 Symposium on High Performance Computing Systems (WSCAD)
+978-1-7281-3772-8/18/$31.00 ©2018 IEEE
+DOI 10.1109/WSCAD.2018.00038
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+−− E x e c u t i o n c o n t r o l
+a t o m i c a l l y : : STM a −> IO ( )
+r e t r y : : STM a
+o r E l s e : : STM a −> STM a −> STM a
+−− T r a n s a c t i o n a l V a r i a b l e s
+newTVar : : a −> STM ( TVar a )
+readTVar : : TVar a −> STM a
+writeTVar : : TVar a −> a −> STM ( )
+Fig. 1. Interface do STM Haskell.
+novas transações como valores de primeira ordem. O sistema
+de tipos da linguagem só permite acesso à memória compartilhada dentro das transações e transações não podem ser
+executadas fora de uma chamada ao atomically, garantindo
+assim que a atomicidade (o efeito da transação se torna visı́vel
+todo de uma vez) e isolamento (durante a execução, uma
+transação não é afetada por outra) são sempre mantidos.
+A biblioteca define um conjunto de primitivas para
+utilização de Memórias Transacionais em Haskell (Figura 1).
+Nela o acesso a memória compartilhada é feito através de
+variáveis transacionais, as TVars, que são variáveis acessı́veis
+apenas dentro de transações. Ao fim da execução de um bloco
+transacional, um registro de acesso às TVars é analisado pelo
+RunTime System para determinar se a transação foi bemsucedida ou não, para assim realizar o commit ou abort da
+transação.
+Existem três primitivas para o uso de TVars: (1) newTVar
+é utilizada para criar uma TVar que pode conter valores de
+um tipo a qualquer; (2) readTVar retorna o conteúdo de uma
+TVar; e (3) writeTVar escreve um valor em uma TVar. As
+transações acontecem dentro da monada STM e essas ações
+podem ser compostas para gerar novas ações através dos
+operadores monádicos (bind (>>=), then (>>), e return), ou
+com a utilização da notação do.
+O retry e o orElse são primitivas que controlam a execução
+do bloco. retry é utilizada para abortar uma transação e colocála em espera até que alguma de suas TVars seja alterada
+por outra transação. orElse é uma primitiva de composição
+alternativa, ela recebe duas ações transacionais e apenas uma
+será considerada; se a primeira ação chamar retry ela é
+abandonada, sem efeito, e a segunda ação transacional é
+executada; se a segunda ação também chamar retry todo o
+bloco é reexecutado.
+III. TRANSACTIONAL BOOSTING EM HASKELL
+Transactional Boosting [Herlihy and Koskinen 2008] é uma
+técnica proposta inicialmente no contexto de Programação
+Orientada a Objetos, como uma maneira de transformar objetos linearmente concorrentes em objetos transacionalmente
+concorrentes, permitindo assim sua utilização dentro de blocos
+atômicos. Nas transações, esses objetos são tratados como
+caixas-pretas e handlers para lidar com efetivações e cancelamentos são registrados no sistema transacional. Dessa forma,
+para que seja criado uma versão boosted de uma ação realizada
+Function
+Call
+generateID
+Inverse
+noop
+Commutativity
+x <- generateID ⇔ y <- generateID x �= y
+x <- generateID � y <- generateID x = y
+Fig. 2. Especificação do gerador de identificadores únicos.
+em um objeto, é necessário que essa tenha um inverso, para
+que o sistema STM possa lidar com o cancelamento de uma
+transação. Além disso, apenas operações comutativas podem
+ser executadas concorrentemente.
+Neste trabalho, foi adicionada uma nova primitiva ao STM
+Haskell que permite a chamada de funções não transacionais
+escritas em Haskell dentro de uma ação STM, além disso a
+primitiva permite a adição de ações que serão executadas no
+caso de cancelamento ou no caso de efetivação da transação.
+A função de boost tem o seguinte protótipo:
+boost :: IO(Maybe a) −> (a −> IO ()) −> IO () −> STM a
+Os argumentos são:
+• Uma ação (do tipo IO(Maybe a)), que é a função original
+que vai ser executada. Quando a ação original é executada
+ela pode retornar um resultado do tipo a, ou se por algum
+motivo ela não pôde ser completada, e.g. um lock interno
+não pode ser adquirido, a função deve retornar Nothing.
+• Uma ação de cancelamento (do tipo a −> IO()), usada
+para reverter a ação executada em caso de abort. Quando
+chamada, esta deve receber o valor retornado pela ação
+original para que seu efeito seja revertido.
+• Uma ação de commit (do tipo IO()), que é usado para
+tornar público a ação feita pela versão boosted da função
+original.
+Com isso boost retorna então uma nova ação STM que pode
+ser usada dentro dos blocos atômicos para executar a ação
+original.
+IV. EXEMPLOS
+Nesta Seção é apresentada a implementação em Haskell de
+três exemplos clássicos de Transactional Boosting [Herlihy
+and Koskinen 2008]. Estes exemplos são um gerador de identificadores únicos (Seção IV-A); Um Produtor e Consumidor
+(Seção IV-B) e Conjuntos (Seção IV-C).
+A. Gerador de Identificadores Únicos
+Um gerador de IDs únicos em STM pode ser problemático,
+sua implementação mais comum seria utilizando um contador compartilhado que é incrementado a cada chamada.
+Como diferentes transações estão acessando e incrementando
+um mesmo endereço de memória, o contador, o sistema de
+memória transacional da linguagem detectaria vários conflitos.
+Entretanto esses não são necessariamente conflitos. Desde que
+todos os retornos sejam diferentes não é necessário que os IDs
+sejam totalmente sequenciais.
+192
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+Function
+Call
+offer buff x
+x <- take
+buff
+Inverse
+tryPopL buff
+pushR buff x
+Commutativity
+offer buff x ⇔ y <- take buff, buffer non-empty
+offer buff x � y <- take buff, otherwise
+Fig. 3. Especificação do Produtor-Consumidor.
+Uma simples implementação thread-safe para fazer o gerador de IDs únicos seria utilizando uma instrução de Compareand-Swap (CAS) disponı́vel em diversas arquiteturas multicore. Haskell provê uma abstração chamada IORef para
+representar locais de memórias mutáveis. A biblioteca atomicprimops [Newton 2016] permite ao programador realizar
+operações CAS implementadas em Hardware com IORefs.
+Assim um gerador de IDs únicos pode ser implementado da
+seguinte forma:
+type IDGer = IORef I n t
+newID : : IO IDGer
+newID = newIORef 0
+g e n e r a t e I D : : IDGer −> IO I n t
+g e n e r a t e I D i d g e r = do v <− readIORef i d g e r
+ok <− atomCAS i d g e r v ( v +1)
+i f ok then return ( v +1) e l s e g e n e r a t e I D i d g e r
+A função generateID recebe como argumento a referência
+ao contador compartilhado e aplica o CAS até conseguir
+incrementá-lo. Usando Transactional Boosting o gerador terá
+que seguir a especificação da Figura 2. Usando a primitiva
+boost uma versão transacional do gerador de IDs pode ser
+implementada da seguinte forma:
+genera te IDTB : : IDGer −> STM I n t
+genera te IDTB i d g e r = boos t ac undo commit
+where
+ac = do
+newID <− g e n e r a t e I D i d g e r
+re turn ( Jus t newID )
+undo = re turn ( )
+commit = re turn ( )
+O novo gerador de IDs é agora uma operação transacional
+e pode ser chamado livremente dentro de transações. Quando
+executado, este simplesmente utiliza a versão CAS do gerador
+para incrementar o contador. Em caso de commit ou abort,
+nada precisa ser feito (ver Figura 2), por isso as ações estão
+vazias.
+B. Produtor e Consumidor
+O Produtor-Consumidor se trata de um problema onde há
+uma sequência de dados a serem processados por threads que
+se comunicam através de um buffer compartilhado.
+O buffer deve oferecer então duas funções: offer , utilizada
+para adicionar um valor ao buffer e take para retirar um valor
+do buffer. Para implementar o buffer utilizando Transactional
+Boosting foi utilizado um double-ended queue thread-safe,
+seguindo a especificação da Figura 3.
+o f f e r : : TBBuffer a −> a −> STM ( )
+o f f e r ( TBBuffer c i o r e f ) v =
+boos t ac undo commit
+where
+ac = do pushL c v
+re turn ( Jus t ( ) )
+undo = do mv <− tryPopL c
+case mv of
+Jus t v −> re turn ( )
+commit = do v <− readIORef i o r e f
+ok <− atomCAS i o r e f v ( v +1)
+i f ok then return ( ) e l s e commit
+O TBBuffer se trata de um dequeue e um IORef que conta
+o tamanho do buffer. A função offer usa pushL para adicionar
+um valor ao queue. Se a transação abortar o valor colocado
+no buffer deve ser removido utilizando o tryPopL. Em caso de
+commit só resta atualizar o tamanho da fila para tornar o novo
+elemento visı́vel à thread consumidora. A função take utiliza
+tryPopR para consumir os dados do buffer:
+t a k e : : TBBuffer a −> STM a
+t a k e ( TBBuffer c i o r e f ) =
+boos t ac undo commit
+where
+ac = do
+s i z e<−readIORef i o r e f
+i f s i z e == 0 then return Nothing
+e l s e do mv <− tryPopR c
+case mv of
+Jus t v −> re turn ( Jus t v )
+undo v = pushR c v
+commit = do v <− readIORef i o r e f
+ok <− atomCAS i o r e f v ( v−1)
+i f ok then return ( ) e l s e commit
+Se não há elementos o suficiente no buffer o Nothing
+resultante irá disparar um abort na transação. Caso contrário
+a função irá decrementar o contador do buffer e consumir
+o valor. A ação de undo deverá incrementar o contador e
+devolver o valor ao buffer.
+C. Conjuntos
+Uma implementação de conjuntos normalmente oferece três
+funções, add, remove e contains.
+Function Call
+add set x / False
+add set x / True
+remove set x / False
+remove set x / True
+contains set x /
+Inverse
+noop
+remove set x / True
+noop
+add set x / True
+noop
+Commutativity
+add set x / ⇔ add set y / , x �= y
+remove set x / ⇔ remove set y / , x �= y
+add set x / ⇔ remove set y / , x �= y
+add set x / False ⇔ remove set x / False ⇔ contains set x /
+Fig. 4. Especificação da estrutura de conjuntos.
+193
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+Para a versão boosted de conjuntos apresentada aqui foi
+utilizada uma lista encadeada thread safe, descrita em [Sulzmann et al. 2009]. Na implementação é importante garantir que
+se uma transação está trabalhando num elemento, nenhuma
+outra transação vai utilizar o mesmo elemento (vide Figura
+4). Isso pode ser alcançado utilizando key-based locking,
+implementado utilizando uma tabela hash para associar um
+lock para cada elemento do conjunto. Vários modelos de tabela
+hash thread safe em Haskell foram apresentados em [Duarte
+et al. 2016], dentre eles, o algoritimo de lock fino foi utilizado
+para esta implementação de conjuntos.
+Para adicionar um elemento ao conjunto deve-se adquirir o
+lock associado ao elemento e então inserı́-lo na lista encadeada.
+Como a lista pode conter elementos duplicados é necessário
+verificar se o elemento já não está contido antes de inserı́-lo.
+Se um elemento foi inserido e a transação abortar, o elemento
+deve ser removido e o lock liberado. Caso a transação termine
+sem conflitos é necessário apenas liberar o lock:
+add : : I n t S e t −> I n t −> STM Bool
+add ( Set a l o c k l i s t ) e l e m e n t =
+boos t ac undo commit
+where
+ac = do
+ok <− l ock a l o c k e l e m e n t
+case ok of
+True −> do
+found <− L i s t . f i n d l i s t e l e m e n t
+i f found
+then return ( Jus t F a l s e )
+e l s e do
+L i s t . addToTail l i s t e l e m e n t
+re turn ( Jus t True )
+F a l s e −> re turn Nothing
+undo v = do
+case v of
+True −> do
+L i s t . d e l e t e l i s t e l e m e n t
+unlock a l o c k e l e m e n t
+re turn ( )
+F a l s e −> do
+unlock a l o c k e l e m e n t
+re turn ( )
+commit = do
+unlock a l o c k e l e m e n t
+re turn ( )
+Para remover um elemento é preciso adquirir o lock associado e então deletar o elemento da lista. Para reverter um
+remove o elemento deve ser devolvido ao conjunto e o lock
+liberado. O commit assim como antes precisa apenas liberar o
+lock.
+remove : : I n t S e t −> I n t −> STM Bool
+remove ( Set a l o c k l i s t ) e l e m e n t =
+boos t ac undo commit
+where
+ac = do
+ok <− l ock a l o c k e l e m e n t
+case ok of
+True −> do
+v <− L i s t . d e l e t e l i s t e l e m e n t
+re turn ( Jus t v )
+F a l s e −> re turn Nothing
+undo ok = do
+case ok of
+True −> do
+L i s t . addToTail l i s t e l e m e n t
+unlock a l o c k e l e m e n t
+re turn ( )
+False−> do
+unlock a l o c k e l e m e n t
+re turn ( )
+commit = unlock a l o c k e l e m e n t >> re turn ( )
+Por fim o contains precisa apenas adquirir o lock do
+elemento e então conferir se ele está na lista. Tanto para o
+commit como para o abort o contains precisa apenas liberar
+o lock adquirido. Por sua simplicidade o contains teve o seu
+código omitido neste artigo.
+V. IMPLEMENTAÇÃO
+Para a proposta de Transactional Boosting em [Herlihy
+and Koskinen 2008] é necessário que o sistema de memória
+transacional da linguagem permita a definição de handlers para
+quando uma transação realizar o abort ou commit, entretanto
+essa não é uma funcionalidade oferecida pelo STM Haskell.
+Para este trabalho uma extensão do STM Haskell e do RTS
+do GHC foi feita para que o compilador oferecesse suporte
+nativo para Transactional Boosting.
+A implementação da primitiva se divide em duas partes.
+Uma interface Haskell em alto nı́vel, que provê a função
+boost, e uma camada principal no RunTime System (RTS)
+escrita em C e em Cmm (um assembly de alto nı́vel utilizado
+na implementação do RTS [Ramsey et al. 2005]).
+A. Implementação da primitiva boost
+A implementação em Haskell da primitiva é responsável por
+lidar com o sistema de tipos da linguagem, executar a ação
+original e passar dados do alto nı́vel para o baixo nı́vel:
+boos t : : IO ( Maybe a ) −> ( a −> IO ( ) )
+−> IO ( ) −> STM a
+boos t iomac undo commit =
+STM (\ s −> e x p r e s s i o n s )
+where
+e x p r e s s i o n = do
+mac <− unIO $ iomac
+case mac of
+Jus t ac −> IO (\ s −>
+( boos t # ( re turn ac ) undo commit ) s )
+Nothing −> IO (\ s −> ( abort # s ) )
+A função começa executando a ação à ser aplicado o boost
+(iomac). Se o resultado for um Just ac a ação foi bem sucedida,
+neste caso a primitiva boost# é chamada para registrar no
+RTS ações para o commit e undo da ação executada. Caso
+o resultado seja um Nothing a ação não pode ser executada
+agora e a transação deve recomeçar. Ambas as funções boost#
+e abort# são Primitive Operations e serão explicadas em mais
+detalhe na Seção V-B, o caractere # ao fim do nome da função
+indica uma chamada ao RTS no GHC. A seguir é apresentado
+o protótipo das Primitive Operations em Haskell:
+boos t # : : IO a −> ( a −> IO ( ) )
+−> IO ( ) −> STM a
+abort # : : STM a
+194
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+B. Implementação no RunTime System
+O RunTime System (RTS) é uma biblioteca escrita predominantemente em C que é ligada a qualquer programa em Haskell
+compilado com o GHC. Ele provê suporte e infraestrutura para
+funcionalidades como garbage collector, transações, exceções,
+escalonamento, controle de concorrência, entre outras. O RTS
+pode ser visto como três grandes subsistemas: Armazenamento, responsável pelo layout de memória e garbage collector; Execução, responsável pela execução de código Haskell;
+O Escalonador, que gerencia threads e dá suporte multicore.
+As modificações feitas no RTS para este trabalho aconteceram
+principalmente nas partes de Armazenamento e Execução.
+Fig. 5. Layout de um Heap Object [Marlow and Peyton Jones 1998].
+Heap Objects, são um aspecto central do armazenamento
+das funções em execução no RTS. Estas são estruturas de
+dados escritas em C e todo Heap Object segue o layout
+da Figura 5. A primeira parte desses objetos é chamado de
+Info Pointer, que aponta para o Info Table da estrutura, a
+segunda é o Payload onde ficam os dados carregados pelo
+Heap Object [Marlow and Peyton Jones 1998]. A Info Table
+contém informações sobre o tipo de estrutura, informação essa
+utilizada principalmente pelo garbage collector, e também o
+código responsável por avaliar o objeto.
+Um tipo importante de Heap Object é o Thread State Object
+(TSO). Ele representa o estado atual de uma thread incluindo
+seu stack de execução. O stack consiste de uma sequência de
+stack frames onde cada frame corresponde a um Heap Object.
+Para dar suporte à Transactional Boosting um novo Heap
+Object (StgBoostSTMFrame) foi criado para armazenar o resultado da função de boost, bem como a ação de abort. O Heap
+Object criado possui duas referências em seus campos: (1)
+ação de abort; (2) resultado da ação de boost executada, que
+é usado como argumento da ação de abort. O objeto tem o
+código a seguir:
+t y p e d e f s t r u c t {
+StgHeader h e a d e r ;
+S t g C l o s u r e * t b A b o r t ;
+S t g C l o s u r e * t b R e s u l t ;
+} StgBoostSTMFrame ;
+Na parte de Execução temos as chamadas Primitive Operations (PrimOps), estas são operações que por alguma
+impossibilidade ou por uma questão de desempenho são
+implementadas diretamente no RTS, e este é o contexto onde
+a maioria das funções do STM Haskell se encontram. As
+PrimOps são escritas em Cmm, um assembly de alto nı́vel
+que é compilado dentro do próprio GHC. Apenas códigos em
+Cmm pode manipular diretamente o stack do TSO ao qual
+pertencem e invocar novas execuções de transações.
+A primitiva boost# é responsável por instanciar um novo
+StgBoostSTMFrame com suas respectivas referências; o StgBoostSTMFrame é então colocado na stack do TSO atual. As
+ações de commit, são armazenadas em uma lista associada
+ao TSO, juntamente com o estado da transação (conjuntos de
+leitura e escrita). Ao fim da transação, se ela for bem-sucedida,
+as ações de commit são executadas. O abort# por sua vez,
+quando chamado percorre o stack do TSO realizando as ações
+de abort necessárias para cada tipo de stack frame encontrado
+e então recomeça a transação. Três tipos de frames podem ser
+encontrados dentro dos blocos transacionais, são eles:
+• StgCatchRetryFrame, o frame associado ao orElse. Neste
+caso somente as ações de abort do primeiro ramo serão
+executadas e a execução continua no segundo ramo do
+orElse
+• StgBoostSTMFrame, o frame associado à ação de Boost.
+Quando encontrado sua ação de abort associada é executada.
+• StgAtomicallyFrame, o frame associado ao atomically. Encontrá-lo no stack indica que a se retornou ao inı́cio da
+transação. Neste caso o registro de acesso à memória atual
+é descartado e a transação reexecutada do inı́cio.
+A primitiva de retry# (PrimOp utilizado pelo retry) funciona de maneira semelhante ao abort#. Quando executado
+ele também percorre o stack associado a seu TSO para tratar
+dos casos especı́ficos até chegar no StgAtomicallyFrame.
+VI. RESULTADOS E EXPERIMENTOS
+Os experimentos foram executados numa máquina com
+processador Intel Core i7, frequência de 3.40GHz, 4 cores
+fı́sicos e 4 lógicos, 8GiB de memória RAM. O sistema
+operacional usado foi o Ubuntu 14.04, a versão do GHC foi
+a 7.10.3.
+A Figura 6 apresenta os resultados para três implementações
+do gerador de identificadores únicos: IDSTM que é uma
+implementação utilizando o STM Haskell puro; IDCAS que
+utiliza CAS para incrementar o contador; IDTB que que
+utiliza Transactional Boosting. Foram executados 10 milhões
+de chamadas de incremento ao identificador, dividindo igualmente as operações entre as threads disponı́veis. Trinta
+execuções foram feitas, e o gráfico apresenta as médias de cada
+execução com o tempo em escala logarı́tmica. Como esperado,
+a versão usando Transactional Boosting adiciona um certo
+overhead em comparação com a versão usando apenas CAS,
+195
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+Fig. 6. Tempo de execução do Identificar Único.
+Fig. 7. Tempo de execução do Produtor-Consumidor.
+porém se comparado com o desempenho da ação transacional
+pura, a versão boosted se mostra uma alternativa muito mais
+eficiente.
+A Figura 7 por sua vez apresenta os experimentos com o
+Produtor e Consumidor. Nas execuções foram criadas duas
+threads, um produtor e um consumidor, para compartilhar
+o buffer. Três implementações são apresentadas: BufferSTM
+que utiliza apenas a biblioteca STM Haskell; BufferP é a
+implementação do dequeue thread safe e linearmente concorrente; BufferTB é a versão usando Transactional Boosting.
+Neste exemplo o overhead existente sobre a aplicação do
+boost torna o BufferTB equivalente ao BufferSTM em termos
+de tempo de execução. A biblioteca TChan STM, utilizada
+na versão puramente transacional, utiliza listas duplamente
+encadeadas, assim, com apenas um produtor e um consumidor,
+poucos falsos conflitos ocorrem; neste caso pode-se observar
+que o overhead da utilização do boost é equivalente ao
+overhead da própria camada STM, sendo o Transactional
+Boosting levemente mais rápido.
+Para avaliação de um exemplo com grande quantidade de
+falsos conflitos, assim como do uso do retry e orElse, foram
+implementados dois exemplos que utilizam a estrutura de conjuntos descrita na Seção IV-C. Para ambos os exemplos, listas
+de 2000 operações foram geradas aleatoriamente para serem
+aplicadas sobre conjuntos inicializados com 2000 elementos.
+No primeiro experimento, dois conjuntos diferentes foram
+inicializados, e todas as threads recebiam referências para
+Fig. 8. Tempo médio de execução de 2000 operações.
+Fig. 9. Tempo médio de execução de 2000 operações.
+ambos os conjuntos. Cada thread tenta realizar a operação
+no primeiro conjunto, caso a operação falhasse, e.g., tentar
+remover um elemento que não esta no conjunto, um retry
+era chamado e a thread tentava a mesma operação no segundo conjunto; se a operação no segundo conjunto também
+chamasse um retry todo o bloco abortava e a thread procurava
+uma nova operação. O gráfico da Figura 8 mostra a média de
+30 execuções em escala logarı́tmica.
+No segundo experimento, dois tipos de listas eram gerados
+em execuções separadas: Lista de leitura, contendo 40% de
+operações de add e remove mais 60% de operações de contains ;
+Lista de Escrita contendo 75% de operações de add e remove
+mais 25% de contains . No gráfico da Figura 9 mostra a média
+de 30 execuções em escala logarı́tmica.
+Pelas Figuras 8 e 9 pode-se observar que a utilização do
+Transactional Boosting resulta numa estrutura de conjuntos de
+desempenho bem superior em comparação à alternativa feita
+puramente com o STM Haskell. Isso acontece pois a detecção
+de conflitos feito pelo sistema de Memórias Transacionais
+gera uma excessiva quantidade de falsos conflitos lidando com
+estruturas encadeadas.
+VII. TRABALHOS RELACIONADOS
+Outros trabalhos oferecem extensões para o STM Haskell
+que abordam o problema de perda de desempenho em casos de
+falsos conflitos. O unreadTVar [Sönmez et al. 2007] pode ser
+196
+Authorized licensed use limited to: UNIVERSIDADE ESTADUAL DE OESTE DO PARANA. Downloaded on July 01,2022 at 17:26:06 UTC from IEEE Xplore.  Restrictions apply. 
+utilizado para melhorar o tempo de execução e uso de memória
+quando se atravessa uma estrutura transacional de dados encadeados. A primitiva pode ser usada para retirar do registro de
+leitura valores que podem gerar falsos conflitos. Similarmente
+em [Sulzmann et al. 2009] a primitiva readTVarIO é utilizada
+como uma maneira de ler TVars para percorrer uma estrutura
+encadeada sem que ela seja adicionada ao registro de leitura
+da transação.
+Em [Harris 2007] os autores apresentam Abstract Nested
+Transaction, que também oferece uma solução para problemas
+de desempenho relacionados aos falsos conflitos em STM.
+Nele acessos à memória são armazenado num registro próprio
+para a detecção de conflitos. E em caso de conflito, inicialmente apenas a expressão que acessa dados conflitantes é
+reavaliada para checar se o resultado da expressão foi alterado
+desde a sua primeira execução, e apenas se houver uma
+alteração toda a transação é reexecutada.
+Estes métodos acima apresentam maneiras de implementar novos tipos de dados com o objetivo de evitar falsos
+conflitos ou antecipar sua detecção e tratamento. O Transactional Boosting, por outro lado, permite a composição de
+estruturas linearmente concorrentes eficientes já existentes às
+ações transacionais. A primitiva de Transactional Boosting
+aqui apresentada foi inicialmente proposta em [Du Bois et al.
+2014]. Porém a implementação apresentada no artigo era toda
+feita em Haskell usando um sistema transacional também
+totalmente escrito em Haskell. Os resultados positivos apresentados por esse protótipo levaram os autores a buscar a
+implementação com suporte do RTS apresentada aqui.
+VIII. CONCLUSÕES E TRABALHOS FUTUROS
+Neste artigo foi apresentada uma extensão do STM Haskell
+e do RTS do GHC que permite a aplicação da técnica de
+Transactional Boosting em programas escritos na linguagem
+Haskell. Além disso, foram apresentados três estudos de
+caso e seus respectivos desempenhos que validam a extensão
+apresentada.
+O sistema aqui descrito oferece uma maneira simples
+de transformar objetos linearmente concorrentes em objetos
+transacionalmente concorrentes que podem ser executados
+em transações. Transactional Boosting é uma técnica de
+baixo nı́vel para controle de concorrência e pode resultar
+em problemas como deadlocks. Entretanto se empregada por
+programadores experientes pode ser usada no desenvolver
+bibliotecas transacionais de alto desempenho. Para trabalhos
+futuros visamos apresentar uma semântica formal para uso da
+primitiva.

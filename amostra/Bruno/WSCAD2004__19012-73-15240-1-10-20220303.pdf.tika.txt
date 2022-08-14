@@ -1,0 +1,765 @@
+Scanned Document
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+Uma abordagem de balanceamento de carga baseada em algoritmo de 
+aprendizado de máquina genético 
+A.R. Pinto e M.A.R. Dantas 
+Departamento de Informática e Estatística(INE) 
+Universidade Federal de Santa Catarina(UFSC) 
+{ arpinto, mario }@inf ufsc. br 
+Resumo 
+A utilização de agregados de computadores está 
+cada vez mais presente no contexto computacional 
+atual. Um dos grandes problemas de tais ambientes, 
+muitas vezes, é a má utilização dos recursos 
+computacionais. O módulo de escalonamento de 
+processos é um importante componente para a 
+melhoria de distribuição das cargas do sistema. Neste 
+artigo, apresentamos uma abordagem de 
+escalonamento dinâmico de processo baseada em 
+sistemas classificadores. Sistemas classificadores são 
+algoritmos de aprendizado de máquina, baseados em 
+algoritmos genéticos, altamente adaptáveis. Em 
+adição, apresentamos a implementação do pacote de 
+software necessário para a execução dos testes, o 
+qual é testado sob o paradigma de uma arquitetura 
+mestre-escravo de agregados de computador. Nossos 
+resultados experimentais demonstram um diferencial 
+na capacidade de adaptação do sistema classificador 
+mediante o ambiente sob qual está inserido. 
+1. Introdução 
+O crescente avanço das tecnologias de hardware e 
+software, juntamente com a necessidade de 
+desempenho computacional cada vez maior das 
+organizações, tem impulsionado o uso de sistemas 
+parale los e distribuídos de larga escala. Uma solução 
+economicamente interessante e eficiente é a utilização 
+de agregados de computadores, também conhecidos 
+como clusters computacionais[ 13,14 ]. Atualmente 
+diversas opções de software são oferecidas para a 
+construção de agregados de computadores cada qual 
+com características distintas, dentre alguns exemplos 
+podemos citar o Oscar [ 17], o OpenMosix[22] e o 
+Linux Virtual Server[23]. 
+Um dos grandes problemas em tais sistemas é o 
+desenvolvimento de técnicas efetivas de distribuição 
+de processos entre os nados do agregado[6]. Segundo 
+145 
+[4], em um agregado de computadores existe uma 
+grande probabilidade de um nodo ficar sobrecarregado, 
+enquanto outros ficam ociosos[ 4, 14, 18]. Tal problema, 
+conhecido como desbalanceamento de carga, degrada a 
+desempenho do sistema como um todo. Uma vez que 
+uma distribuição de processos mais efetiva diminui o 
+tempo de resposta computacional dos processos. 
+O problema de escalonamento é reconhecidamente 
+como NP-completo[ 15). Por esta razão, é comum a 
+utilização de métodos heurísticos ou estocásticos, uma 
+vez que esses fornecem soluções quase ótimas em 
+tempo razoável. Dentre os diversos métodos utilizados, 
+pode-se notar uma expressiva utilização de a lgoritmos 
+genéticos [I ,2,3 , 16.20,21 ,24]. Neste artigo 
+apresentamos uma abordagem de escalonamento de 
+processos através de sistemas classificadores [I O, I I] . 
+Esses sistemas apresentam uma abordagem de 
+aprendizado de máquina através de algoritmos 
+genéticos, e possuem grande capacidade de adaptação 
+mesmo quando submetidos a ambientes adversos. 
+O desempenho do sistema classificador proposto foi 
+comparado com o método threshold e random. Os 
+testes computacionais além de demonstrarem o bom 
+desempenho do método proposto, indicam a 
+capacidade de aprendizado do sistema classificador. 
+Tais testes foram executados em um agregado de 
+computadores, cujo sistema foi implementado na 
+linguagem Java. 
+Este artigo é dividido da seguinte forma: a seção 2 
+apresenta uma revisão sobre as técnicas de 
+escalonamento de processo e balanceamento de carga. 
+Na seção 3 são introduzidos os conceitos de algoritmos 
+genéticos e sistemas classificadores. Nosso ambiente 
+de teste, juntamente com os detalhes da implementação 
+são apresentados na seção 4. A seção 5 apresenta os 
+testes computacionais executados. Finalizamos o 
+artigo, na seção 6, com nossas conclusões e trabalhos 
+futuros . 
+2. Escalonamento de Processos e 
+Balanceamento de Carga em Sistemas 
+Distribuídos e Paralelos 
+O problema de escalonamento de processos é uma 
+das questões mais críticas na construção de um sistema 
+distribuído[7, 14]. Segundo [6], podemos considerar 
+um escalonador de processos como um componente 
+que faz a gerência de recursos. O problema de 
+escalonamento de processos pode ser divido em três 
+principais componentes: consumidores, recursos e 
+política de balanceamento. Neste caso podemos 
+considerar os consumidores como os processos que 
+esperam resposta. Os recursos são os diversos 
+processadores que irão executar os processos. Por fim, 
+a política de escalonamento é o método pelo qual os 
+processos serão encaminhados aos seus respectivos 
+processadores. 
+A classificação de escalonamento apresentada em 
+[6], divide o escalonamento global em estático e 
+dinâmico. A utilização de escalonamento estático 
+necessita de um prévio conhecimento do 
+comportamento e das dependências dos módulos de 
+um programa paralelo. Tal abordagem não leva em 
+conta o estado atual do sistema. O escalonamento 
+estático define o balanceamento das cargas antes da 
+execução, essa abordagem apresenta boa efi ciência em 
+ambientes homogêneos e processos cujo 
+comportamento pode ser previsto em tempo de 
+compilação. Por outro lado, o escalonamento dinâmico 
+é empregado nos casos em que as necessidades dos 
+processos não são previamente conhecidas. Desta 
+forma, o algoritmo de escalonamento deve consultar o 
+estado do sistema constantemente. De acordo com [6], 
+no escalonamento dinâmico nenhuma decisão é tomada 
+antes que o processo seja criado no ambiente. 
+Sistemas distribuídos que implementam 
+escalonamento dinâmico geralmente implementam a 
+migração de processos. Quando a migração é 
+preemptiva (o processo pode ser transferido para outro 
+nodo durante a sua execução), o processo deve ser 
+migrado juntamente com seu contexto (espaço de 
+endereçamento, links e arquivos abertos) [9]. 
+Entretanto, é possível implementar uma abordagem 
+menos rígida de escalonamento dinâmico chamada ontime assignment(OTS)[6]. A técnica OTS é considerada 
+uma abordagem dinâmica, aonde a decisão do nodo 
+aonde o processo vai ser executado é feita logo após a 
+criação do processo e não considera migração 
+preemptiva. Neste trabalho foi utilizada a técnica OTS. 
+146 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+3. Algoritmos Genéticos e Sistemas 
+Classificadores 
+Algoritmos genéticos são algoritmos de busca. 
+baseados nos mecanismos de seleção natural ll 0.12 J. 
+De acordo com os mecanismos de seleção natura l os 
+indivíduos mais adaptados possuem mais chances de 
+sobreviver e deste modo repassar seu código genético 
+para seus descendentes. Em um algoritmo genético os 
+indivíduos de uma população são representados pelo 
+seu cromossomo (genótipo), que usualmente são 
+representados por um conjunto de caracteres. A cada 
+nova geração um novo conjunto de cri aturas artificia is 
+(caracteres) são gerados e com base nos fragmentos de 
+material genético dos ind ivíduos mais aptos das 
+gerações passadas. 
+O foco central da pesquisa dos algoritmos genéticos 
+é a robustez. O balanço entre eficácia e e fi ciência é 
+requerido para a sobrevivência nos mais diversos 
+ambientes. Se os sistemas artificiais forem mais 
+robustos, o custo de redefinição de tais sistemas pode 
+ser reduzido, ou eliminado. Si stemas que atingem 
+níveis mais altos de adaptação, são capazes de executar 
+melhor e por mais tempo. 
+O processo de evolução de um algoritmo genético 
+começa com a definição de uma popul ação inicial de 
+possíveis respostas para o problema. A parrir desta 
+população inicial, três operadores são utilizados: 
+se leção, reprodução(crossover) e mutação. A cada 
+iteração do processo evolutivo são escolhidos pares de 
+reprodutores (através do método de seleção), tal 
+se leção é feita com base na adaptabilidade dos 
+indivíduos. Uma vez selecionados os pares de 
+reprodutores, estes são cruzados (através do operador 
+de reprodução). Os descendentes são gerados com base 
+no materia l genético dos seus ancestrais e podem ou 
+não ter seu cromossomo mutado (através do operador 
+de mutação). A população de respostas é então 
+renovada, de acordo com critério de reposição 
+previamente escolhido e uma nova iteração é iniciada. 
+O critério de parada da evolução pode ser por 
+convergência (quando a adaptação média da 
+população de soluções não aumenta a um certo número 
+de gerações) ou por um número de gerações 
+previamente definido. 
+3.1. Sistemas Classificadores 
+Sistemas classificadores são sistemas de 
+aprendizado de máquina baseados em algoritmos 
+genéticos, capazes de aprender regras sintaticamente 
+simples chamadas classificadores, com o propósito de 
+guiar sua desempenho em um ambiente 
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+arbitrário[ I O, 11 ]. Um sistema classificador consiste 
+de três componentes principais: 
+I . Sistema de regras e mensagens; 
+2. Sistema de divisão de créditos(apportionment of 
+credit); 
+3. Algoritmo Genético. 
+O sistema de regras de mensagens de um sistema 
+classificador é um tipo especial de sistema de 
+produção. Um sistema de produção é um esquema 
+computacional que usa regras como seu único 
+dispositivo algorítmico, as regras são geralmente da 
+seguinte forma: 
+se<cond ição>então<ação> 
+O significado da regra de produção é que a ação 
+correspondente a condição deverá ser efetuada. Os 
+class ificadores geralmente possuem um alfabeto 
+ternário{O, I,#}, aonde# é considerado o símbolo don 't 
+care, ou seja o símbolo # pode representar tanto O 
+quanto I. 
+Uma mensagem recebida do sistema pode ativar um ou 
+mais classificadores. Podemos tomar como exemplo o 
+conjunto de classificadores apresentados na tabela I: 
+Tabela 1: Exemplo de conjunto de 
+classificadores 
+condição Ação 
+10#0 1# 100 
+11 # 1#0 I 11 
+0#1111 001 
+100001 110 
+Se o ststema receber do ambtente a mensagem 
+''101011", o primeiro classificador será ativado e a 
+ação "I 00" será executada. 
+Na criação do sistema classificador todos os 
+classificadores possuem a mesma aptidão, quando um 
+classificador é escolhido deve "pagar" uma parte de 
+sua aptidão ao Sistema de divisão de créditos. A 
+quantia a ser paga ao sistema de divisão de créditos é 
+determinada através de uma taxa pré-definida. Quando 
+mais de um classificador satisfizerem uma determinada 
+condição, será escolhido aquele que tiver a maior 
+quantia a pagar ao sistema de divisão de créditos. Esta 
+quantia será paga ao sistema classificador que gerou tal 
+mensagem, se a ação que este executou no sistema 
+tiver sido positiva. De tempos em tempos o algoritmo 
+genético é ativado, e os classificadores são renovados. 
+4. Sistema Proposto 
+A grande maioria das pesquisas de escalonamento 
+147 
+de processos através de algoritmos genéticos utiliza-se 
+da simulação de sistemas distribuídos para testar o 
+comportamento do escalonador[ I, 16,20,24 ]. Neste 
+contexto, a validação do método é facilitada já que os 
+experimentos podem ser repetidos inúmeras vezes. 
+Apesar disto, o comportamento real do sistema só será 
+conhecido quando este for testado em um ambienre 
+real. A literatura apresenta algumas simulações que 
+comprovam a eficiência de algoritmos genéticos na 
+resolução tanto do problema do escalonamento estático 
+quanto o do escalonamento dinâmico. Visto que 
+somente algumas abordagens apresentam testes 
+práticos, optamos por implementar um protótipo que 
+seja capaz de demonstrar todas os reais problemas da 
+construção de um escalonador de processos dinâmico 
+que utilize um sistema classificador. 
+Uma vez que os parâmetros do sistema deverão ser 
+analisados em tempo de execução e que estes variam 
+com o passar do tempo, acreditamos que a utilização 
+de um algoritmo de aprendizado de máquina, como é o 
+caso de um sistema classificador, é a mais apropriada 
+solução para tal problema. 
+O primeiro passo para a implementação de um 
+sistema distribuído que utilize um escalonador de 
+processos com base em s istemas c lassificadores, é a 
+definição do ambiente. Nosso ambiente de teste é 
+baseado em uma arquitetura mestre-escravo(13, 14), 
+aonde o nodo mestre recebe os processos e repassa 
+estes para serem executados nos nodos escravos. Um 
+esquema mais explicativo do sistema pode ser visto na 
+figura I. 
+Figura 1. Arquitetura do sistema 
+Tal arquitetura permite que os processos sejam 
+recebidos de clientes, sejam eles móveis ou fixos. 
+Além disso, depois que o sistema for devidamente 
+testado o escalonador poderá ser implementado em um 
+ambiente de agregado que utilize arquitetura 
+semelhante tais como OSCAR[ 17] e Linux Virtual 
+Server[21]. 
+O nodo mestre é responsável por gerenciar todo o 
+escalonamento do sistema, e ainda recebe o estado dos 
+nodos escravos. Um esquema com as classes principais 
+do módulo mestre é demonstrada na figura 2. O 
+ambiente implementado pode ser dividido basicamente 
+em dois módulos: módulo Mestre e escravo. O 
+módulo mestre recebe os processos dos usuários e 
+armazena estes em uma fila de processos do sistema. O 
+módulo mestre permite a conexão de diversos nodos 
+escravos, garantindo desta forma a escalabilidade do 
+sistema. Quando o nodo mestre é inicializado, é 
+especificado o número de nodos escravos que este irá 
+atender. Cada nodo escravo é conectado através da 
+inicialização dos serviços do nodo. Uma vez que todos 
+os nodos escravos estão conectados ao nodo mestre, o 
+sistema está pronto para a execução dos processos. 
+Para cada nodo conectado no nodo mestre, é criada 
+uma thread ThMasterSon, uma ThMasterSonStatus e 
+uma fil a de processos. A ThMasterSon é responsável 
+por retirar os processos da fila do nodo e enviar para os 
+nodos. ThMasterSonStatus recebe o status dos nodos e 
+atualiza o SystemStatus, aonde é armazenado o status 
+geral do sistema. 
+Para simular o recebimento de processos pelo sistema 
+foi criada a ThUser, thread que de acordo com um 
+intervalo de tempo pré-determinado insere um 
+processo na fila do s istema. O balanceamento de carga 
+é de responsabilidade do serviço ThColl ector, que de 
+acordo com o algoritmo de balanceamento ut ilizado 
+retira os processos da fila de sistema e envia para uma 
+fi la de nodo. 
+pt.rtProctSS 
+Diagrama de classes do módulo 
+mestre 
+148 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+Cada nodo possui um NodeStatus, aonde é 
+armazenado o status atual do nodo(Tempo médio de 
+resposta e numero de processos ativos). O status do 
+nodo é enviado pela ThNodeStatus, que possui um 
+intervalo de envio de status pré-determinado. Para cada 
+processo recebido pelo nodo-escravo é criada uma 
+thread ThProc, ao fim da de cada processo submetido 
+o tempo médio de resposta é atualizado pela ThProc. A 
+figura 3 demonstra a o diagrama de classes do módulo 
+escravo. 
+No de Status 
+1 
+1 
+ThNodeStatus 1 1 'N"od'e ThProc ~ 
+1--- - ~ 1--_1 1 
+1--'--1 
+. '--Figura 3. Diagrama de classes do módulo 
+escravo 
+O sistema foi implementado na linguagem Java. 
+devido as facilidades de sockets e threads oferecidas 
+pelo mesmo. 
+4.1. O Sistema Classificador 
+O sucesso na implementação de um sistema 
+classificador está intimamente ligado com a escolha de 
+uma estrutura para os classificadores que seja capaz 
+de representar todos os possíveis estados do sistema. 
+Nossa proposta é adaptar o método de threshold [7]. 
+Tal algoritmo estabelece um limite de processos 
+(thresho/d), que cada nodo pode executar, quando este 
+limite é excedido o nodo não recebe novos processos. 
+De acordo com [8] , a escolha do melhor threshold 
+depende da carga do sistema e do custo de 
+transferência dos processos. Uma vez que tais 
+parâmetros mudam de acordo com a taxa de utilização 
+do ambiente, a melhor abordagem seria a utilização de 
+um algoritmo adaptativo[ S. 8, 18]. 
+Segundo [8], políticas de balanceamento de carga 
+que utilizam informações simples do sistema possuem 
+desempenho semelhante a aquelas que utilizam 
+parâmetros complexos e não sobrecarregam o sistema. 
+De acordo com [ 18], o desempenho de um algoritmo 
+de balanceamento de carga é dependente do índice de 
+carga utilizado e que os índices baseados no tamanho 
+da fila de processos apresentam resu ltados melhores 
+que outros índices. 
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+Segundo [ 19], uma grande variedade de índices de 
+carga foram implícita ou explicitamente utilizados na 
+literatura. Nossa proposta é utilizar a variação do 
+tempo médio de resposta dos processos como condição 
+de entrada para o classificador. Desta forma o sistema 
+classificador receberá como condição a variação de 
+incremento ou decremento do tempo médio de 
+respostas e devolverá uma ação que ajustará o 
+threshold. A configuração dos classificadores será a 
+seguinte: 
+<Se houve aumento ou decremento>+<porcentagem 
+de variação do tempo médio de resposta>: <Se o 
+threshold deve ser incrementado ou 
+decrementado>+<porcentagem de variação do 
+threshold> 
+A tabela 2, demonstra as configurações da condição 
+dos c lassificadores: 
+Tabela 2 : Configuração das condições dos 
+classificadores 
+Primeiro bit "O" tempo médio de resposta 
+dos processos diminuiu 
+Primeiro bit " I" tempo médio de resposta 
+dos processos aumentou 
+3 próximos bits indicam a 
+variação do tempo médio 
+de respostas 
+"000" deOa 15% 
+"001" de 15 a 25% 
+"OI O" de 25 a 35% 
+"O I I " de 35 a 45% 
+" 100" de 45 a 55% 
+" 101 " de 55 a 65% 
+"I I O" de 65 a 85% 
+''I I I " maior que 85% 
+A tabela 3, demonstra a configuração das ações dos 
+classificadores: 
+Tabela 3: Configuração das ações dos 
+classificadores 
+Primeiro bit "O" threshold 
+decrementado 
+Primeiro bit " I" threshold 
+incrementado 
+3 próxmos bits indicam a 
+variação que o threshold 
+irá sofrer 
+"000" 0% 
+"001" 10% 
+será 
+será 
+149 
+"OI O" 20% 
+"O li " 30% 
+" 100" 40% 
+" 101 " 60% 
+" li O" 80% 
+" I I I" 100% 
+Quando o sistema classificador é criado, um número 
+determinado de classificadores são gerados 
+aleatoriamente. 
+A única informação que o sistema classificador 
+possui para ajustar o threshold é o ultimo tempo médio 
+de resposta. De posse desta informação, a função de 
+consulta codifica a condição de acordo com a tabela 2. 
+O melhor classificador (aquele que possuir maior 
+aptidão), paga a taxa para o sistema de créditos e 
+submete a sua condição para o ThCiassifier que irá 
+decodificar a condição de acordo com a tabela 3 e 
+ajustar o threshold do s istema. O sistema de divisão de 
+créditos paga a sua quantia total de créditos ao último 
+classificador que enviou uma ação positiva ao sistema, 
+ou seja uma ação que conseguiu diminuir o tempo 
+médio de resposta do sistema. 
+De acordo com um número determinado de 
+consultas a população de classificadores é evoluída e 
+reposta no conjunto de classificadores de acordo com a 
+taxa de reposição. Existe um número mínimo de 
+classificadores de cada condição que deve estar 
+presente na população de classificadores . Se o 
+descendente gerado possuir o número mínimo de 
+classificadores na população ele é trocado pelo 
+classificador de igual idêntica que possuir a menor 
+aptidão. Caso contrário ele simplesmente é 
+acrescentado a população. Optamos por aplicar o 
+operador de mutação somente na condição dos 
+classificadores. 
+Se possuirmos os classificadores apresentados na 
+tabela 4 em nosso sistema classificador: 
+Tbl 4E I d I T d a e a xemQio e C aSSI ICa ores 
+Classficador Aptidão 
+#000:0001 230 
+#O# I :1 000 240 
+1000:0001 300 
+0000:1 100 110 
+##0 1:1111 80 
+. - . . A cond1çao I 000 receb1da do ambiente, 1ra retornar 
+os classificadores #000 e I 000 uma vez que o segundo 
+classificador possui maior aptidão este irá pagar a taxa 
+ao sistema de divisão de créditos e submeter a sua ação 
+para o ThClassifier. O ThCiassifier de posse da ação 
+decodifica a mesma e aj usta o threshold do sistema, 
+que no caso será decrementado em I 0%. Caso a 
+condição não fosse satisfeita por nenhum c lassificador 
+da população, um novo classificador com a condição 
+recebida e uma ação aleatória seria gerado e 
+adicionado a população. 
+5. Resultados Experimentais 
+O desempenho do sistema classificador proposto foi 
+comparado com o desempenho dos métodos random e 
+threshold fixo. No método randômico um nodo desti no 
+é escolhido ao acaso e o processo é então enviado para 
+o mesmo. No método de threshold fi xo, um threshold é 
+escolhido e os na dos recebem processos enquanto este 
+número pré-determinado de processos não for atingido. 
+A tabela 5 indica os parâmetros util izados nos testes 
+computaciona is apresentados. 
+Tabela 5· Parâmetros dos Testes 
+Parâmetro Valor 
+Intervalo de envio de 0,5 segundos 
+status dos nados 
+Intervalo de inserção de 0,0 I segundos 
+novos processos na fil a do 
+s istema pe la thread 
+usuário 
+Intervalo de extração do l O segundos 
+status total do sistema 
+Threshold I O processos 
+Intervalo de atua lização 5 segundos 
+do Threshold 
+População inic ial de 200 classificadores 
+classificadores 
+N umero de consultas 50 consultas 
+necessárias para evolução 
+da população de 
+class ificadores 
+Taxa de pagamento ao I 0% da aptidão 
+S istema Divisor de 
+Créditos 
+Aptidão Inicial dos 200 
+C I ass i fi cadores 
+Probabilidade de mutação I% 
+Probabilidade de 100% 
+crossover 
+Taxa de reposição da 10% 
+população de 
+c lassificadores 
+.. 
+Utll1zamos nos testes I nodo mestre e 3 nados 
+escravos. Sendo que o nodo mestre foi utilizado para 
+operar como mestre e escravo. Todas as máquinas 
+possuem 256 Megabytes de memória principal e 
+processador AMO Duron 1,2 Ghz. Foram rea lizadas 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+três baterias de testes, em todas as bateria foram 
+utili zadas 4 ThUser. Os processos gerados pe las 
+ThUser no primeiro e terceiro conjuntos de teste são de 
+tamanho variável, desta forma acreditamos que nossa 
+s imulação fi cará mais próxima de um sistema real. Os 
+resultados apresentados na primeira e segunda de teste 
+representam a média de 4 testes de I O minutos. Os 
+resultados da terceira bateria de teste representam a 
+media de 2 testes de 20 minutos. Utilizamos o tempo 
+médio de resposta(mean response time) dos processos 
+como métrica, desta forma quanto menor o tempo 
+médio de resposta maior o desempenho do s istema. 
+Na segunda e terceira bateria de testes os processos 
+submetidos executavam o cálculo dos números primos 
+pelo método conhecido como Crivo de Eratostenes. Na 
+segunda bateria de testes todos os processos 
+submetidos calculavam os número primos até oito mil, 
+novecentas vezes. Na terceira bateria de testes os 
+processos gerados recebiam como ent rada um número 
+aleatório entre I 000 e 8000 e então ca lculavam todos 
+os primos até este número recebido novecentas vezes. 
+150 
+' 
+Cll 200 -------------. 
+IJ> 
+5 ~ 150 +--~----------l 
+C.IJ) 
+~ e 1 oo + dl,.....,.:::._ ___ .:::._ __ ;___ -l 
+~ i= 50 
+~ o r.w~!!!j!f,!!i!M·-~--· CO <O N 
+N 
+~ --Classifier System 
+-Threshold 
+-õ-Random 
+Figura 4. Resultados obtidos no primeiro 
+conjunto de testes 
+Analisando o gráfico da figura 4, podemos observar 
+um melhor desempenho do método random. Tal fato é 
+decorrente principalmente da pequena quantidade de 
+nados e da granularidade fina dos processos, deste 
+modo a escolha aleatória de um nodo é mais eficiente 
+do que a utilização de uma política mais complexa. O 
+método threshold obteve o pior resultado, isto deve-se 
+principalmente a grande quantidade de processos que 
+são gerados pelas threads de usuário. Uma vez que o 
+threshold é fi xo, a medida que o número de processos 
+aumenta na fila do s istema o tempo médio de resposta 
+aumenta. O gráfico da figura 4 demonstra ainda que o 
+desempenho do sistema c lassificado r proposto é 
+inferior ao método randômico e s uperior ao threshold. 
+No início da execução o s istema classificador obteve 
+um aumento de tempo médio de resposta. Tal 
+comportamento é decorrente da exploração de 
+diferentes classificadores ocorrida no s istema 
+Anais do 5° Workshop de Computação de Alto Desempenho, WSCAD 2004 
+classificador, até que o mesmo consiga escolher os 
+mais adaptados ao ambiente. A med ida que mais 
+c lassi fi cadores são testados, as escolhas do sistema 
+classificador melhoram, aumentando assim o 
+desempenho do sistema. 
+Mean 
+Response 
+Time (s) 
+150[@] 100 
+50 
+o 
+i C Classifier System 
+!11Random 
+! DThreshold 
+Figura 5: Médias dos tempos médios de 
+resposta obtidos no primeiro conjunto de 
+testes 
+O gráfico da figura 5 demonstra a média dos tempos 
+médios de resposta. Os intervalos de aprendizado do 
+sistema classificador contribuem para aumentar a 
+média dos tempos médios de resposta. Apesar disto, o 
+sistema classificador obteve uma média bem menor do 
+que o método de threshold fixo. 
+Q) 
+E 
+i= 
+Q) 
+VI 
+250r-~~---------------------. 
+200 ~----~~---~~~~r--a~~~ 
+S ~ 150 I-----'-GIF-"1oi 
+Q.Vl 
+:3 - 100 ~-GI."'---A:-kP'A 
+~ 50 ~~-~y~~-~---~----~~~ r: 
+CQ 
+Q) 
+::!: 
+~ M m ~ ~ ~ M m ~ 
+N M M v v ~ 
+Time 
+- Threshold --Classifier System 
+Figura 6: Resultados obtidos no segundo 
+conjunto de testes 
+No segundo e terceiro conjuntos de teste, quando os 
+processos submetidos possuíam uma granularidade 
+grossa o método randômico onerou as máquinas de 
+forma que seus resultados tiveram de ser 
+desconsiderados. As máquinas ficaram 
+sobrecarregadas a ponto de pararem de funcionar. Os 
+gráficos das figuras 6 e 7 demonstram a superioridade 
+do nosso método em comparação ao método threshold 
+na terceira bateria de testes. Apesar disto é notável um 
+grande número de intervalos de aprendizado, ou seja o 
+sistema classificador teve mais dificuldades em se 
+adaptar ao ambiente. 
+151 
+Mean 
+Response 
+Time(s) 
+200m 150 
+100 
+50 
+o 
+D Threshold I 
+D Classifier System 
+Figura 7: Médias dos tempos médios de 
+resposta obtidos no segundo conjunto de 
+testes 
+Time 
+' - Threshold --Classifier System j 
+Figura 8: Resultados obtidos no terceiro 
+conjunto de testes 
+No terceiro conjunto de testes 
+classificador obteve um desempenho 
+método de threshold, como indicam os 
+o sistema 
+inferior ao 
+gráficos das 
+figuras 8 e 9. 
+Mean 
+Response 
+Time(s) 
+D Threshold 
+D Classifier 
+System 
+Figura 9: Médias dos tempos médios de 
+resposta obtidos no terceiro conjunto de 
+testes 
+Apesar do sistema classificador não obter os 
+melhores resultados é possível notar sua tendência em 
+se adaptar aos mais variados tipos de ambiente. Logo, 
+os resultados computacionais apresentados nesta seção 
+demonstram a capacidade de aprendizado do sistema 
+classificador e sua adaptabilidade frente as mudanças 
+do ambiente. 
+6. Conclusões e T rabalhos Futuros 
+Os resultados experimentais apresentados neste 
+artigo demonstram a alta adaptabilidade de um sistema 
+classificador quando submetido a um sistema real. Em 
+adição, a abordagem demonstra a capacidade de 
+aprendizado do ambiente de agregado de computador, 
+sob o qual o sistema classificador está inserido. Estes 
+pontos podem ser observados através dos intervalos de 
+baixo desempenho, seguidos por intervalos de alto 
+desempenho apresentados nos gráficos. Os resultados 
+demonstram ainda a alta capacidade de adaptação do 
+sistema classificador proposto, uma vez que o tempo 
+de execução do sistema não foi suficiente para uma 
+evolução apropriada dos classificadores. 
+Como trabalhos futuros está sendo estudado um 
+método de armazenar os classificadores. Desta forma, 
+quando o s istema iniciar a execução já poderá contar 
+com class ificadores adaptados a sua realidade. Outra 
+direção da pesquisa é a possibilidade de adicionar 
+nosso sistema a um sistema de imagem única, tal como 
+o OSCAR ou o Linux Virtual Server. 
+7. Referências Bibliográficas 
+[I] A.Y. Zomaya, Y.H. Teh, "Observations on Using Genetic 
+Algoritlrms for Dynamic Load-Ba/ancing", IEEE Trans. On 
+Parai/e/ and Distributed Systems, vol. 12, no. 2, Sep.200 I , 
+pp. 899-911 . 
+[2] E.S.J-1. Hou, N. Ansari, H. Ren, "A Genet ic Algorithm for 
+Multiprocessor Scheduling", IEEE Trans. On Parai/e/ and 
+Distributed Systems, vol. .5, no. 2, Feb. l 994, pp. 11 3-120. 
+(3] A.Y. Zomaya, C. Ward, B. Macey, "Genetic Scheduling 
+for Parallel Processor Systems: Comparative Studies and 
+Performance lssues", IEEE Trans. On Parai/e/ and 
+Distributed Systems, vol 10, no. 8, Aug. l999, pp. 795-812. 
+[4) S.Zhou, "A Trace-driven Simulation Study of Dynamic 
+Load Balancing", IEEE TJ·ans. On Software Eng., vol. 14, 
+no. 9, sep. 1988, pp. 1327-1 341. 
+[5) O. Kremien, J. Kramer, "Methodical Analysis of 
+Adaptative load Sharing Algorithms", IEEE Trans. On 
+Parai/e/ and Distributed Systems, vo l. 3, no. 6, Nov. 1992, 
+pp. 747-760. 
+[6) T.H. Casavant, J.G. Khul, "A Taxonomy ofScheduling in 
+Genera i-Purpose Distributed Computing Systems", IEEE 
+Trans. On Software Eng .. vol. 14, no. 2, Feb. 1988, pp. 141154. 
+[7) Y.T.Wang, R.J.T. Morris, " Load Sharing in Distributed 
+Systems", IEEE Trans. On Computers., vol. 34, no. 3, Mar. 
+1985, pp. 204-217. 
+[8) D.L. Eager, E.D. Lazowska, J. Zahorjan, "Adaptative 
+Load Sharing in Homogeneous Distributed Systems", IEEE 
+Trans. On Software Eng.. v oi. 12, no. 5, May 1986, pp. 
+662-675. 
+[9] M.L. Powell, B.P. Miller, "Process migration in 
+DEMOS/MP", in Proc. 9'" ACM Symp. Operai. Syst. 
+Principies, 1983, pp.l10-119. 
+Foz do Iguaçu, 27 a 29 de Outubro de 2004 
+[10) D.E. Goldberg, Genetic Algoritlrm in Search. 
+Optimization, and Machine Learning, Addison-Wesley, 
+1989. 
+[11] J.J-1 . Holland, "Genetic Algorithms and adaptation", in 
+Proc. Of the NATO Advanced Research lnstitute on 
+Adaptative Control of 111-Defined Systems, 1984, pp. 317333 . 
+[12] M. Mitchell, An !ntroduction to Genetic Algoritlun. MIT 
+Press., 1996. 
+(13] D. Culler, P. Jaswinder, Parai/e/ Computer 
+Architecture: A Hardware Software Approach, Morgan 
+Kaufmann Publishers, 1999. 
+[14] M.A.R. Dantas, E.J. Zaluska, Efficient Scheduling of 
+MP! App/ications on Networks of Workstations, pp 489-499, 
+Future Generation Computing Systems, 1998. 
+[ 15) C. Papadimitriou, K. Stei lglitz. Combinatoriul 
+Optimization: Algoritms and Complexity, Dover 
+Publications, 1998. 
+[16] J. M. Corrêa, A. C. Melo., "Using a Classifier System to 
+lmprove Dynamic Load Balancing", in Proc 30alntemational Conference on Parai/e/ Processing.. IEEE 
+Press. Valencia, Spain, Sep., 200 I. pp. 411-416. 
+[1 7] A.R. Pinto, C.Rista, M.A.R. Dantas, "OSCAR: Um 
+Gerenciador de Agregado para Ambiente Operacional 
+Linux", in ERAD 2004: 4' Escola Regional de Alto 
+Desempenho, Pelotas, Brasi l, 2004, pp.l93-196. 
+[18] M.A.R. Dantas, W.J. Queiroz, G.H. Plitscher, " An 
+Efficient Threshold Approach on Distributed Workstation 
+C lusters", in HPC in Simulation. Washington, USA, 2000, 
+pp. 313-317. 
+[19] D.Ferrari, S.Zhou, "An Empi rical lnvestigation o r Load 
+lndices for Load Balancing Applications", in Proc. 
+Pe1jormance '87, the 12'11 lnt 'l Symp. 011 Computer 
+Pe1jormance Modeling. Measureme/11 and Evaluation, 
+Amsterdam, The Netherlands, 1988, pp. 5 15-528. 
+[20] J.Baumgartner, D.J. Cook, B.Shirazi, "Genetic Solutions 
+to the Load Balancing Problem", in Proc. of tlle 
+lnternational Conference on Parai/e/ Processing,pp. 72-78 
+1995. 
+[21] S.H. Woo, S.B. Yang, S.D. Kim, T.D.Han, "Task 
+scheduling in Distributed computing Systems with a genetic 
+algorithm", in Proc. of tire J-ligh-Pe!farmance Computing 
+on the lnformation Superhighway. 1-/PC-Asia "97, 
+1997,pp.30 1-305. 
+152 
+l22] Maya, Anu, Asmita, Snehal, Krushna (1\pril I" 2004) 
+"MigShm: Shared memory over openMosix" A projcct report 
+on MigShm ronline]. Disponiblc in 
+http://openmosix.sourcelorge.net/#Documetltatitln 
+[23] W. Zhang (April 151 2004) "Linux Virtual Servl!r for 
+Scalable Network Scrvices" [Onlinej. Disponibk in 
+http://www.linuxvirtualserver.org/docs/scheduling.html 
+[24] M. Munetomo, Y. Takai, and Y. Sato"A Genetic 
+Approach to Dynamic Load-Balancing in a Distributed 
+Computing System",Proc.First lnt'l Conf. Evolutionary 
+Computation, IEEE World Congress Computational 
+lntelligence, vol. I, 1994, pp. 418-421. 

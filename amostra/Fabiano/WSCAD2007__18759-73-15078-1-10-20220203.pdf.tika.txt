@@ -1,0 +1,744 @@
+C:/Coser/LCP/Pesquisa/MeusTextos/MeuArtigo/Artigo_alexcoser.dvi
+Sistema de Medição Precisa do Consumo de Energia em Dispositivos Móveis de
+Comunicação Sem Fio
+Alexandre Coser Monteiro
+Ricardo Guerra Vianna
+Renato de Castro Dutra
+Laboratório de Computação Paralela
+UFRJ
+(coser,vianna,rcdutra)@lcp.coppe.ufrj.br
+Luiz Maltar Castello Branco
+UFRRJ
+maltar@ufrrj.br
+Claudio Luis de Amorim
+UFRJ
+amorim@lcp.coppe.ufrj.br
+Resumo
+The battery time life of mobile wireless equipments such
+as palmtops, laptops, and celulars, depends strongly on the
+efficiency of their wireless communication devices to save
+energy when in operation. In this article, we describe the
+design of a new electronic device capable of measuring the
+energy cost of basic wireless communication events, including scan, connection, and data transport. We illustrate the
+potentials of our equipment by fine measuring the energy
+costs of the Bluetooth protocol operation in practical situations.
+1 Introdução
+A crescente disseminação de equipamentos portáteis sem
+fio incluindo celulares, palmtops e laptops, coloca o desafio
+de como conectá-los sem lhes sacrificar a mobilidade. A
+dificuldade está no fato que a mobilidade do equipamento é
+influenciada por vários fatores, incluindo o meio físico utilizado para conexão, o protocolo de transmissão de dados, a
+localização de outros dispositivos e sua autonomia, isto é, o
+impacto da mobilidade sobre o funcionamento dos dispositivos quando conectados.
+Neste trabalho, propomos e avaliamos um novo sistema de controle de consumo de energia para dispositivos
+móveis, inspirado no trabalho apresentado em [3]. Nosso
+sistema é capaz de permitir o aumento da autonomia de um
+equipamento através do controle eficiente de uso da energia
+de bateria disponível. Esta vantagem pode ser aplicada em
+equipamentos como o MOTE-IV [6] para pesquisas de protocolos e em rede sensores utilizadas em computação de alto
+desepenho como para aplicações de monitoração ambiental. Mais especificamente, desenvolvemos um novo equipamento de medida direta de consumo (EMDC) que permite
+converter a variação da corrente da fonte de dispositivos de
+comunicação sem fio em informação digital de consumo de
+energia por cada evento básico de comunicação. Os dados
+fornecidos em tempo real pelo equipamento servem de entrada para um novo modelo preciso de consumo de energia
+(Encon) que propomos. Esses dois componentes, EMDC
+e Encon, juntos formam um sistema que permite avaliar a
+eficiência de consumo de energia dos protocolos de transmissão, conexão e localização do dispositivo móvel. Para
+avaliar o potencial do sistema proposto, apresentamos um
+estudo sobre consumo de energia de equipamentos sem fio
+que utilizam o protocolo Bluetooth, em situações e cenários
+reais de operação, verificando a influência das variáveis ambientais e diferentes métodos de controle de consumo de energia utilizados por diferentes fabricantes e protocolos distintos. Os resultados mostram que o sistema proposto é de
+fato capaz de quantificar com precisão a diferença de consumo entre mestre e escravos nos regimes de funcionamento
+do Bluetooth cujo modelo não mede a variação dos fatores
+tais como número de conexões, retransmissões e geografia
+do ambiente. Mais importante, os resultados confirmam a
+importância em diferenciar estes ambientes em simulações
+ou técnicas que tentam prever o comportamento do consumo de energia desses tipos de equipamentos.
+Este artigo é organizado da seguinte forma. Na seção 2
+discutimos as principais características de consumo de energia do protocolo Bluetooth, além de métodos utilizados
+para o cálculo do consumo de energia nesse tipo de protocolo. Na seção 3, apresentamos o sistema para medição do
+consumo de energia para equipamentos sem fio. Na seção
+4, descrevemos os experimentos realizados com o protocolo
+Bluetooth e os resultados obtidos. Na seção 5, apresentamos nossas conclusões.
+2. Bluetooth
+Neste artigo iremos apresentar somente as camadas do protocolo Bluetooth que tenham alguma relevância no controle
+do consumo de energia desses dispositivos, [1].
+2.1 Estabelecimento de Conexão e Controle
+de Energia
+Ao se ligar um dispositivo Bluetooth, ele entra em estado de
+Espera até que seus circuitos e programas sejam inicializados. Neste estado, o dispositivo pode seguir para os estados
+de Page ou Inquiry se o endereço do nó ao qual ele irá se
+conectar for conhecido, como mostrado na figura 1.
+Figura 1: Estabelecimento de conexão
+O procedimento de inquiry possibilita ao dispositivo, descobrir se há outro(s) dispositivo(s) em seu raio de alcance,
+seu(s) endereço(s) e "clock(s)". Ao receber uma mensagem
+desse tipo, um dispositivo deve enviar como retorno um
+pacote contendo além de sua identidade, informação para
+sincronismo entre eles. Para evitar colisões, quando vários
+dispositivos estiverem respondendo, eles utilizam uma temporização aleatória para a comunicação. Somente o endereço é necessário para estabelecer uma conexão. Numa
+conexão ponto-multiponto, o canal é compartilhado entre
+várias unidades Bluetooth. Quando duas ou mais unidades
+compartilham o mesmo canal, elas formam uma piconet.
+Após realizar um inquiry, o dispositivo pode retornar ao estado de espera ou realizar um page para tentar estabelecer
+uma conexão piconet com a unidade escrava. Nesta situação os transceptores estão ligados e com um alto consumo
+de energia.
+Para o procedimento de page, vários esquemas podem
+ser aplicados. Porém existe um esquema imperativo que é
+utilizado quando duas unidades se encontram pela primeira
+vez e neste caso o procedimento de inquiry é seguido pelo
+procedimento de page. No estado de Page, o dispositivo
+transmite dois pedidos de conexão seguidos, em diferentes
+portadoras a cada 1, 25 ms e verifica também duas vezes se
+há respostas.
+Após realizada a conexão os dispositivos mestre e escravo podem combinar a utilização de algum esquema de
+page opcional ou negociar algum dos três regimes de baixo
+consumo: sniff, hold ou park. Neste trabalho foram investigados experimentalmente o regime de consumo sniff e hold.
+Para economizar energia, os dispositivos ociosos entram
+no estado de Espera, porém periodicamente eles devem
+"acordar" para verificar se existe algum dispositivo tentando
+estabelecer conexão. Esse evento que ocorre periodicamente é chamado de Scan, dura 10 ms e cada vez que este
+dispositivo desperta, ele verifica uma portadora diferente.
+A banda Básica Bluetooth também dispõe de técnicas
+de retransmissão de pacotes e de correção de erros para
+fornecer robustez e confiabilidade ao Bluetooth.
+O Bluetooth disponibiliza os valores de alguns parâmetros utilizados para controlar as conexões, entre eles estão o
+RSSI, LQ e TPL.
+O Indicador de Intensidade do Sinal Recebido (RSSI) é
+um parâmetro opcional do Bluetooth. Para que um transceptor possa fazer parte de um canal com potência controlada, ele deve ser capaz de medir a própria intensidade de
+sinal no receptor e determinar se o transmissor no outro lado
+da conexão deve aumentar ou diminuir seu nível de potência
+de saída.
+Este parâmetro indica a diferença entre a intensidade
+do sinal medido na recepção e os limites que compõem o
+Golden Receiver Power Range (GRPR). Um valor positivo
+indica quantos dB’s este sinal tem, acima do limite máximo do GRPR e um sinal negativo, quantos dB’s abaixo do
+limite mínimo da faixa de GRPR.
+O Nível de Potência de Transmissão (TPL) se refere ao
+sinal de transmissão do circuito de rádio do Bluetooth, para
+um canal de comunicação específico. Este valor é mostrado
+na escala de dBm e pode variar de -30 dBm a 20 dBm, onde
+P (dBm) = 10 ∗ Log(P (mW )).
+O parâmetro Qualidade do Link (LQ) indica o valor da
+qualidade de conexão de um dispositivo em um canal. Ele
+varia de 0 a 255 e quanto maior o valor medido, melhor é a
+qualidade de comunicação. Cada fabricante de equipamentos Bluetooth utiliza um algoritmo diferente para medir este
+índice, porém todos eles usam a Taxa de Erro de Bit (BER)
+como parâmetro deste cálculo.
+2.2 Regimes de Economia de Energia Sniff e
+Hold
+No regime Sniff, o ciclo de trabalho para escuta ou recepção da unidade escrava pode ser reduzido. Dentro deste
+intervalo o dispositivo estaria em modo sleep. O slot de
+tempo em que o mestre pode começar uma transmissão
+para uma escrava específica é reduzido, isto é, o mestre só
+pode começar uma transmissão em intervalos de tempo préestabelecidos com a unidade escrava e esta, por sua vez,
+reduz o tempo dedicado para escutar esta transmissão e aumenta o intervalo de tempo para o próximo instante onde ela
+irá novamente escutar o mestre. Estes intervalos são chamados de sniff attempt (tsniffattempt) e tempo de sniff (Tsniff
+), respectivamente.
+No regime Hold o dispositivo entra em modo de baixo
+consumo, desliga seu receptor e transmissor de maneira
+a não executar qualquer função Bluetooth durante esse
+período neste determinado canal, restando somente atividades dentro dos demais intervalos de tempo definidos para
+outros canais aos quais ele já tenha se conectado. O dispositivo entra neste estado por tempo determinado e é acordado pelo mestre, não perde seu endereço lógico na rede,
+mas perde o sincronismo com o mestre, que ao terminar o
+tempo de hold é recuperado.
+3 Sistema de Medida de Consumo de
+Energia em Equipamentos sem Fio
+3.1 Trabalhos Relacionados
+O Modelo de Perda no Espaço Livre, conforme mostrado
+em [9], é uma alternativa para uma melhor modelagem do
+consumo de energia. Porém ele se torna impreciso quando
+for necessário considerar as diferenças e perdas provocadas
+pelas modificações do ambiente e a topologia da rede formada pelos equipamentos sem fio.
+Outros modelos [4, 7, 9, 10], conseguem uma boa aproximação ao modelar as variações dos estados de transmissão
+e recepção durante a montagem de uma piconet ou seja, a
+transferência de informação entre nós, a adição de novos
+nós e a eventual perda e recuperação de uma conexão e
+até o comportamento de alguns regimes de baixo consumo.
+Porém estes modelos enfrentam dificuldades para representar o comportamento das variáveis físicas, especialmente
+Reflexão, Difração e Espalhamento impostas pelo cenário
+onde o equipamento irá operar e que são responsáveis por
+provocar atrasos, retransmissões e consequentemente elevar
+o consumo de energia.
+Em contraste, nosso sistema supera tais dificuldades
+através do uso da informação de variação da corrente de alimentação do equipamento sem fio, como principal mecanismo de observação das variações de consumo gerados pelos diferentes tipos de cenários e ambientes onde ele se localiza, independente do tipo de protocolo usado para comunicação ou tipo de equipamento. É uma modelagem simples
+que usa uma aproximação semelhante a [7, 4], porém captura a interação complexa entre os componentes de hardware, software, o meio ambiente e as transições entre os
+modos de consumo. Desta maneira, o sistema de medida
+oferece ao pesquisador uma ferramenta simples para várias
+aplicações em ambiente de comunicação sem fio, incluindo
+o desenvolvimento de algoritmos para redução de consumo
+de energia e dimensionamento da bateria, taxa de aquisição
+e formação dos dados para comunicação.
+3.2 Equipamento de Medida Direta e Modelo
+de Consumo
+O sistema desenvolvido em [5] para Medição do Consumo
+de Energia em Equipamentos Sem Fio é composto pelo
+Equipamento de Medida Direta de Consumo (EMDC) e o
+modelo de consumo de energia Encon, descritos a seguir.
+Figura 2: Diagrama de Blocos do EMDC
+No sistema mostrado na Figura 2, o computador armazena as informações de variação de consumo e controla o
+equipamento de comunicação sem fio que está conectado ao
+barramento USB. Isso permite que exista um sincronismo
+entre os eventos de comunicação bluetooth e a captura pelo
+conversor corrente/tensão da variação de consumo num determinado instante que é repassada ao computador via porta
+serial. Este sistema também pode ser replicado para outros
+nós escravos ou mestres, sem a necessidade de implementar
+qualquer modificação do sistema.
+Observando o funcionamento interno de um equipamento de comunicação sem fio podemos afirmar:
+• A corrente consumida varia de acordo com as mudanças de estados pelos quais o equipamento passa
+para realizar uma conexão e consequentemente uma
+comunicação.
+• A Potência Consumida pelo dispositivo de comunicação sem fio é a soma das potências consumidas,
+quando ele está no estado ativo sem conexão, mais a
+potência do estado scan, page e inquiry, mais a potência consumida no estado ativo e conectado, no estado
+de transmissão e no estado de recebimento.
+Podemos traduzir estas afirmações na equação 3.2.
+Encon = I(f) ∗ (tat.s.con + tscan + tativo + tsniff +
+thold + tpark + Enbase),
+onde Encon é o consumo de energia total do dispositivo,
+I(f) representa a variação da corrente consumida em função
+das variações de estados e ambiente do equipamento sem
+fio, tat.s.con, tscan, tativo, thold e tpark indicam o tempo em
+milisegundos de duração de cada estado, ativo sem conexão,
+scan, ativo conectado, hold, sniff e park respectivamente. O
+nível de consumo mínimo inerente a cada equipamento, que
+varia para cada tipo, modelo e fabricante é representado por
+Enbase.
+Deste modo o valor de Encon é capaz de perceber as
+variações definidas pelo estado de mestre e escravo, distância, número de conexões ativas, ambientes fechados e
+abertos. O que torna possível verificar também, atrasos nas
+trocas de mensagens e reflexões causados pela geografia do
+ambiente.
+A figura 3, é o resultado dos sinais capturados pela
+EMDC e enviados para o computador de análise, ela representa a variação do consumo em relação aos eventos de comunicação, ou seja, é a curva característica de cada estado
+pelo qual o dispositivo sem fio passa, desde o seu estado de
+Espera até o estabelecimento de conexão e transmissão da
+mensagem.
+A
+B
+C
+D
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+T
+I(f)
+Figura 3: Curvas de variação de corrente I(f) em mA capturadas pela UMDC
+A curva A da figura 3 trecho A-1, apresenta o mestre no
+estado de Espera. No trecho A-2, realizando um "Scan", no
+trecho A-3 conectado com um escravo e no trecho A-4 e A5, enviando uma mensagem e recebendo uma mensagem,
+respectivamente. A curva B da mesma figura mostra os
+mesmos estados relativos a um escravo, porém no trecho
+B-4 ele recebe uma mensagem e no trecho B-5 ele envia
+uma mensagem e o trecho B-3 representa apenas o estado de
+conexão com o mestre. A curva C da figura 3 no trecho C-3
+representa este escravo em estado de "Sniff"e o trecho C-4
+e C-5, indicam seu comportamento quando esta enviando e
+recebendo uma mensagem sob o estado de Sniff, respectivamente.
+A curva D da figura 3 trecho D-4, representa este mesmo
+escravo em estado de "Hold". Todas as funções param e
+o dispositivo passa apenas a ligar seu rádio dentro de uma
+janela de tempo de 10 ms a cada 1, 25 sg para escutar informações de outros canais.
+4 Experimentos
+Todos os experimentos consistiram em realizar medidas de
+consumo de energia utilizando a EMDC e programas auxiliares desenvolvidos para coleta dos dados, passando a
+fornecer informações suficientes para uma análise da potência total consumida pelo dispositivo, da potência de transmissão fornecida pelo parâmetro TPL, da indicação de qualidade da conexão mostrada no valor de LQ e da potência de
+recepção calculada através de RSSI.
+Como o parâmetro RSSI disponibilizado pelo Bluetooth
+não indica o valor absoluto da potência de recepção, mas a
+diferença entre a potência recebida e a faixa Golden Receive
+Power Range, neste artigo ele será chamado de dRSSI, para
+que não seja confundido com o parâmetro RSSI utilizado
+em diversas áreas para indicar o valor absoluto da potência
+de recepção de um sinal RF comum.
+Os experimentos utilizaram de 2 a 10 dispositivos Bluetooth, todos do mesmo tipo, adaptador Bluetooth USB
+classe 1 modelo USB-BT1, com chip CSR BlueCore 02,
+sensibilidade de −80dBm em 0.1% de BER e consumo médio de 200mA@5V .
+4.1. Cenário I - Campo Aberto
+Este cenário consiste em uma área aberta com aproximadamente 150m de comprimento por 70m de largura a céu
+aberto e sem nenhum obstáculo na linha de visada. Neste
+cenário, o modelo de atenuação da potência de transmissão,
+que considera a reflexão no chão para o cálculo da potência
+de recepção pode ser comparado indiretamente com o valor
+de dRSSI.
+Com os dispositivos operando em modo Ativo, foram
+transmitidos 60 pacotes de 4 KB, a cada 3 m de distância
+entre eles, até a queda da conexão, ocorrida a 108 m de distância. Os resultados obtidos são apresentados a seguir na
+forma de gráficos.
+A figura 4, mostra a intensidade da potência de transmissão (TPL) do escravo e mestre. A variação de TPL ocorre
+para compensar a atenuação com o aumento da distância
+sofrido pela potência do sinal recebido no mestre. Com o
+controle de energia sempre atuante nesta classe de dispositivo Bluetooth, o valor de TPL será o menor possível para
+manter a conexão, neste regime de funcionamento. Quando
+este valor chega a 0dBm e a distância continua aumentando, os valores amostrados de dRSSI passam a apontar
+um afastamento cada vez maior do ponto ótimo (0dBm),
+indicando que a quantidade de amostras muito menores que
+zero está muito alta, prejudicando a conexão e tornando
+necessário aumentar a potência de transmissão.
+0 20 40 60 80 100 120 140
+−25
+−20
+−15
+−10
+−5
+0
+Distância (m)
+T
+P
+L
+(d
+B
+m
+)
+Mestre
+Escravo
+Figura 4: Mestre e Escravo - TPL - Cenário I
+0 20 40 60 80 100 120 140
+200
+220
+240
+260
+280
+300
+320
+340
+360
+380
+Distância(m)
+I(
+f)
+(m
+A
+)
+Mestre
+Escravo
+Figura 5: Mestre e Escravo - I(f) - Cenário I
+A figura 5 descreve o comportamento do parâmetro I(f),
+medido na EMDC, segundo a variação da distância. Esta
+curva indica que a EMDC foi capaz de perceber a variação
+do consumo destes dispositivos durante o afastamento dos
+equipamentos sem fio, dentro deste ambiente sem obstáculos. Esta variação ocorre em degraus semelhantes a variação
+do aumento da potência de transmissão indicado por TPL,
+isto mostra que este aumento da potência de transmissão
+tem um grande peso no consumo do dispositivo.
+A figura 6, indica o tempo total gasto pelo rádio do
+dispositivo durante a transmissão e recepção de cada elemento da piconet para cada ponto de medida, ou seja, é o
+tempo que o rádio esteve ligado para transmitir e receber. A
+curva esperada deveria mostrar uma variação pequena deste
+tempo, com o aumento da distância, devido à constante taxa
+de transmissão e tamanho do pacote transmitido, como pode
+ser observado na curva do escravo. As pequenas variações
+de tempo podem ser explicadas pelo pequeno atraso causado com o aumento da distância entre os pontos e a política
+de recebimento de mensagem usado pelo Bluetooth, na qual
+0 20 40 60 80 100 120 140
+0
+500
+1000
+1500
+2000
+2500
+3000
+3500
+4000
+4500
+Distância(m)
+T
+e
+m
+p
+o
+ R
+á
+d
+io
+ (
+m
+s)
+Mestre
+Escravo
+Figura 6: Soma do tempo que o Rádio ficou ligado em Tx e
+Rx - Cenário I
+ele aumenta o tempo de recepção ou transmissão para um
+determinado canal que ainda não finalizou o envio ou recepção da mensagem, em até 5 unidades de tempo Bluetooth (5 ∗ 625µs).
+A pequena queda de tempo apresentada nos primeiros
+60m do mestre e o salto de tempo após este ponto foram
+provocados pela sucessiva queda na qualidade do canal de
+comunicação e possível perda de pacotes, tolerada pelo dispositivo até alcançar os 60m. Com a perda de pacotes, o
+mestre não liga seu transmissor para enviar a confirmação
+a cada trecho de pacote recebido, assim o tempo registrado
+caiu.
+4.2 Cenários com Obstáculos - LCP
+Os cenários que se seguem estão localizados dentro do Laboratório de Computação Paralela (LCP) da UFRJ. A dimensão do LCP é de aproximadamente 14m de comprimento
+por 14m de largura, com armários, computadores, mesas,
+divisórias de vidro e madeira prensada, atuando como obstáculos a comunicação sem fio, como mostra a figura 7.
+Foram realizados seis experimentos reunidos em três
+cenário neste ambiente. Com excessão dos experimentos
+realizados no Cenário III e IV, os demais mantiveram o dispositivo mestre em uma posição fixa e enquanto movimentava o escravo para as posições P1, P2, P3, P4, P5, P6, P7,
+P8, P9, P10, P11, P12, mostradas na figura 7.
+4.2.1 Cenário II - Regime Ativo
+Este cenário foi planejado para realizar dois experimentos.
+O primeiro faz o envio de 60 pacotes de 4 KB do nó Escravo em direção ao nó Mestre e o segundo inverte a situação e o Escravo se torna o destino das mensagens, de modo
+a verificar a influência no gasto de energia, do equipamento
+de comunicação sem fio ao assumir o estado de fonte ou
+Sala 10
+Sala 1
+Sala 2
+Sala 3
+Sala 4
+Sala 5
+Sala 6Sala 7
+Sala 8
+Entrada
+P7
+Sala 9
+P6
+P9
+P11
+P10
+P12
+P8
+P5
+P3
+P2
+Mestre
+P1
+P4
+Distância entre
+o mestre e os
+pontos:
+P01 - 3,64m
+P02 - 5,23m
+P03 - 5,34m
+P04 - 6,27m
+P05 - 7,20m
+P06 - 7,42m
+P07 - 7,62m
+P08 - 8,30m
+P09 - 8,33m
+P10 - 11,57m
+P11 - 12,44m
+P12 - 15,24m
+Figura 7: Mapa do LCP
+destino da mensagem, dentro de uma situação real de operação repleto de obstáculos.
+2 4 6 8 10 12 14 16
+−25
+−20
+−15
+−10
+−5
+0
+Distância
+T
+P
+L
+ (
+d
+B
+m
+)
+Escravo como Fonte
+Escravo como Destino
+Figura 8: TPLs dos escravos Fonte e Destino
+As figuras 8, 9 e 10 mostram que o comportamento
+do consumo dentro de ambientes com obstáculos, diminui
+a influência do nível de potência de transmissão sobre o
+gasto total de energia consumida e transfere parte deste peso
+para o tempo que o rádio precisa ficar ligado para completar a transmissão e recepção das mensagens. Em comparação com os gráficos anteriores de TPL, existe uma variação
+muito maior para pequenas distâncias, os obstáculos criam
+o efeito de afastamento entre mestre e escravo e faz com
+que o nível de energia de transmissão precise aumentar para
+atingir distâncias menores, além da observação de que o escravo na transmissão de pacotes precisou de um nível mais
+alto de potência para transmitir do que quando o mesmo escravo funcionava como receptor. Pois agora ele passou a
+ser o elemento passivo do controle de energia do Bluetooth
+e recebe mensagens o obrigando a aumentar seu nível de
+2 4 6 8 10 12 14 16
+100
+150
+200
+250
+300
+350
+Distância
+I(
+f)
+(m
+A
+)
+Escravo como Fonte
+Escravo como Destino
+Figura 9: I(f) dos escravos Fonte e Destino
+2 4 6 8 10 12 14 16
+4.5
+5
+5.5
+6
+6.5
+7
+7.5
+8
+x 10
+4
+Distância
+T
+e
+m
+p
+o
+ d
+o
+ R
+á
+d
+io
+(m
+s)
+Escravo como Fonte
+Escravo como Destino
+Figura 10: Tempo total que o Rádio ficou ligado em Tx e
+Rx do Escravo
+energia de transmissão, secção 2.1.
+4.2.2 Cenário III - Ping
+Para observar as curvas características do equipamento de
+comunicação sem fio quanto a variação do tamanho do pacote, este experimento montou uma piconet dentro do LCP
+e sem variar a distância entre o nó mestre e escravo, foram
+criadas mensagens de 100B até 30KB, sendo de 100B a
+1KB usando passo de variação de tamanho igual a 100B, de
+1kB a 10kB passo de 1.000B e de 10KB a 30KB com passo
+de 10.000B. Estas mensagens foram enviadas pelo escravo
+para o mestre, sem variar a quantidade de mensagens, com
+um pequeno atraso de 1 segundo entre cada mensagem.
+Com os resultados medidos foram construídas as curvas
+das figuras 11, 12 e 13.
+A figura 11 mostra que não houve mudança do nível
+de potência de transmissão com a variação do tamanho da
+mensagem e que os dois nós usaram o mesmo nível de
+potência de transmissão durante o experimento, segundo o
+10
+2
+10
+3
+10
+4
+10
+5
+−25
+−24.8
+−24.6
+−24.4
+−24.2
+−24
+−23.8
+−23.6
+−23.4
+−23.2
+−23
+Pacotes(KB)
+T
+P
+L
+(d
+B
+m
+)
+Mestre
+Escravo
+Figura 11: TPL - Cenário III
+10
+2
+10
+3
+10
+4
+10
+5
+190
+195
+200
+205
+210
+215
+Pacotes(KB)
+I(
+f)
+(
+m
+A
+)
+Mestre
+Escravo
+Figura 12: Mestre e Escravo - I(f) - Cenário III
+10
+2
+10
+3
+10
+4
+10
+5
+0
+500
+1000
+1500
+2000
+2500
+3000
+3500
+4000
+4500
+Pacotes (KB)
+T
+e
+m
+p
+o
+ d
+o
+ R
+á
+d
+io
+(m
+s)
+T
+MRx
+T
+MTx
+T
+ERx
+T
+ETx
+Figura 13: Mestre e Escravo - Tempo Tx e Rx - Cenário III
+parâmetro TPL fornecido pelo Bluetooth.
+Na figura 12 notamos uma pequena variação da corrente consumida com o aumento do tamanho da mensagem
+e muito pouca variação entre o mestre e escravo. Isto mostra
+que o nível de energia de transmissão tem um peso grande
+no consumo, mas não é mandatório em algumas situações
+e aplicações do equipamento sem fio. Com o aumento do
+tamanho da mensagem, surge a necessidade de processar
+mais dados, por isso o consumo aumenta. Mas sem variação de distância, nem obstáculos na linha de visada dos
+equipamentos de transmissão, o valor de TPL não varia.
+A figura 13 mostra o tempo total do rádio ligado em
+transmissão e recepção do mestre e escravo. Observa-se,
+que o escravo está gastando mais tempo para receber a mensagem de retorno e confirmação, do que o mestre gasta para
+retransmitila. Isto ocorre porque a contagem do tempo de
+rádio ligado em recepção, inclui o tempo que o mestre e
+escravo gastaram para verificar outros canais em busca de
+outros dispositivos. Porém com o aumento do tamanho
+da mensagem o escravo sacrifca as unidades de tempo utilizadas para verificar outros canais, para receber o restante
+da mensagem sem particiona-las.
+4.2.3 Cenário IV - Mestre + 7 Escravos
+Neste cenário foi observada a simples variação de consumo
+em relação ao aumento do número de conexões ativas com
+um único mestre, mostrada na Figura 14. O experimento
+consistiu em ligar a EMDC ao dispositivo Bluetooth mestre
+e realizar uma conexão com outro dispositivo Bluetooth escravo e repetir este processo até completar sete conexões
+ativas com este mesmo mestre, ou seja formar uma piconet
+e acrescentar um escravo de cada vez até o limite de sete.
+De acordo com o comportamento observado do protocolo Bluetoth, podemos afirmar que o tempo de rádio ligado deve aumentar quase linearmente com o acréscimo de
+escravos na piconet. Porém a figura 14 indica que esta variação de consumo não segue o mesmo comportamento, mas
+também é crescente com o número de escravos. Observando
+a figura 15, que retrata o nível de energia de transmissão
+em um único canal de comunicação mestre-escravo, de cada
+novo escravo adicionado durante o experimento é possível
+perceber que a variação do comportamento do consumo total de energia por parte do mestre não sofre uma forte influência do valor de TPL, pois para cada canal o mestre
+manteve um valor de TPL distinto.
+5 Discussão dos Resultados
+Com os resultados obtidos dentro de cada cenário para a
+variação de I(f) e do tempo de rádio utilizado na comunicação é possível afirmar que estes parâmetros respondem
+a todos os principais fatores que influenciam o consumo
+de energia. Esses resultados contrastam com os do Bluetooth no sentido de que ele não mede a variação dos fatores
+1 2 3 4 5 6 7
+240
+260
+280
+300
+320
+340
+360
+380
+400
+420
+I(
+f)
+(m
+A
+)
+Nº de Escravos
+Figura 14: Mestre - I(f) - Cenário IV
+0 1 2 3 4 5 6 7 8
+−25
+−20
+−15
+−10
+−5
+0
+Escravo
+T
+P
+L
+(d
+B
+m
+)
+Figura 15: Mestre - TPL - Cenário IV
+tais como, o número de conexões, retransmissões ocorridas
+durante a troca de mensagens entre mestre e escravo e geografia do ambiente onde o equipamento está localizado.
+Também foi possível comprovar algumas afirmações
+como a falta de simetria na energia de transmissão [2],
+primeiramente observada pela variação de TPL do mestre
+e escravo dentro do cenário II. Notamos também que a relação entre, a quantidade de chaveamentos no circuito RF
+para transmissão e recepção e o consumo de energia [10],
+também pode ser vista no cenário II. A variação do consumo com o tamanho da mensagem e o tempo de atividade
+do equipamento [8], foi observada no cenário III.
+A diferença no consumo observada em todos os cenários
+entre mestre e escravo e seus regimes diferenciados de funcionamento, mostram o peso da influência que o ambiente
+de operação tem sobre a energia gasta pelos dispositivos de
+comunicação sem fio e a importância em diferenciar estes
+ambientes ao gerar simulações ou técnicas que tentam prever o comportamento do consumo de energia desses tipos
+de equipamentos. Observando os resultados da EMDC para
+gerar o parâmetro I(f) da equação de gasto de energia, verificamos sua capacidade para demonstrar as mudanças de
+ambiente e geografia de operação dos equipamentos. Como
+resultado, a EMDC é capaz de caracterizar com precisão as
+curvas de consumo de energia destes diferentes ambientes e
+regimes de operação.
+6 Conclusões e Trabalhos Futuros
+Discutimos sobre um novo modelo capaz de descrever o
+consumo de energia em equipamentos de comunicação sem
+fio, que utiliza como parâmetro as informações fornecidas
+por um instrumento de medida construído por nós com esta
+finalidade. Apresentamos experimentos com o protocolo
+Bluetooth realizado em condições reais de operação e comparamos os resultados com as descrições de outros modelos
+de consumo de energia para comprovar a eficácia da nossa
+proposta.
+Trabalhos futuros incluem a avalição de outros cenários e
+políticas de baixo consumo utilizadas pelo protocolo Bluetooth. Também temos a intenção de usar este modelo em
+testes com outros protocolos, como o Zigbee e o 802.11.
+Referências
+[1] I. Bluetooth R© SIG. Specification of the Bluetooth System,
+2002.
+[2] W. R. Heinzelman, A. Chandrakasan, and H. Balakrishnan.
+Energy-Efficient Communication Protocol for Wireless Microsensor Networks. In HICSS ’00.
+[3] S. Kostin and C. L. Amorim. Métricas para Controle Eficiente de Potência de Transmissão em Cenários de Redes
+de Sensores com Obstáculos. Technical Report ES-692/06,
+Universidade Federal do Rio de Janeiro, 2006.
+[4] C. B. Margi and K. Obraczka. Instrumenting Network Simulators for Evaluating Energy Consumption in Power-Aware
+Ad-Hoc Network Protocols. In MASCOTS ’04.
+[5] A. C. Monteiro. Sistema Eficiente de Medição de Consumo de Energia para Equipamentos de Comunicação sem
+fio. Master’s thesis, Universidade Federal do Rio Janeiro,
+2006.
+[6] MoteIV. http://www.moteiv.com/.
+[7] L. Negri and L. Thiele. Power Management for Bluetooth
+Sensor Networks. Wireless Sensor Network European Workshop, Fevereiro 2006.
+[8] A. Rácz, G. Miklós, F. Kubinszky, and A. Valkó. A Pseudo
+Random Coordinated Scheduling Algorithm For Bluetooth
+Scatternets. In MobiHoc ’01.
+[9] P. Santi. Topology Control in Wireless Ad Hoc and Sensor
+Networks. JohnWiley & Sons Ltda., 2005.
+[10] Y. Tseng and T. Lin. Power-conservative designs in ad hoc
+wireless networks. The handbook of ad hoc wireless networks, pages 71–81, 2003.

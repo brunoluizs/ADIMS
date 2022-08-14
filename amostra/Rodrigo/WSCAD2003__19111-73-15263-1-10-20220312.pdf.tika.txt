@@ -1,0 +1,547 @@
+Scanned Document
+Uma Biblioteca de Processos Leves para a Implementação 
+de Aplicações Altamente Paralelas* 
+Gerson Geraldo H. Cavalheiro Lucas Correia Vi lia Reatt Evandro Clivatti Dali ' AgnoJf 
+Programa Interdisciplinar de Pós-Graduação em Computação Aplicada 
+Universidade do Vale do Rio dos Sinos 
+São Leopoldo- RS- Brasil 
+{gersonc, lucasvr, ecd}®exatas . unisinos.br 
+Resumo 
+Um dos maiores problemas ligados à programação collcorrellte (ou paralela) 11ão está relacio11ado someme à questüo da ide11tijicação da co11corrência do problema. mas também à exploração eficieme do paralelismo do hardware dispollível. Neste sentido, diversos ambientes de programaçüo/execuçcio buscam realizar o mapeamento da concorrência do programa em execuçüo ao paralelismo real da 
+arquitetura sobre a qual a execução está se desenvolvendo. 
+Em geral. estes ambiemes apoiam-se em técnicas de escalonamemo e modelos de programaçüo. Neste trabalho é apresentada wna interface de programaçüo. baseada no padrüo 
+threads POSIX. vqltada à descrição da concorrência em 
+aplicações e o ntícleo executivo associado. 
+1 Introdução 
+Nos últimos anos, o desenvolvimento do processamento 
+de alto desempenho (PAD) encontrou um grande a liado nos 
+aglomerados de computadores (clusters) e nas arquiteturas 
+multiprocessadoras com memória compartilhada (Symmetric Multi-Processors, ou SMPs). No entanto, a exploração 
+dessas arquiteturas com o intuito de obtenção de bom desempenho de execução não é trivia l, tendo sido desenvolvidos diversos ambientes de execução, dotados ou não de 
+uma interface de programação especializada, para auxiliar 
+o programador nesta tare fa. Este trabalho descreve Anahy, 
+em especial sua interface de programação e seu mecanismo 
+de escalonamento de tarefas. O obje tivo de Anahy é permitir que o programador possa descrever a concorrênc ia de 
+sua aplicação d e forma precisa e independente dos recursos computaciona is disponíveis na arquite tura sobre a qual 
+•Projeto Anahy- CNPq (55.2 196/02-9) 
+f JTI/CNPq 
+l iTifCN Pq 
+11 7 
+a execução do programa pode rá vir a se r executado. 
+De custo re lativamente baixo, os aglomerados e os SMPs 
+têm aumentado sua participação como suporte ao desenvolvimento de programas para aplicações com a lto custo computac ional. Dentre as razões que motivam este fato, a lém 
+do custo, está o potenc ial de desempenho que pode v ir a 
+ser obtido. Dados estes facilmente comprováveis através 
+dos preços aplicados pelo mercado aos microcomputadores 
+bi- e quadri -processadores e pela inc idênc ia de aglo merados na lis ta das 500 máquinas mais potentes em operação. 1 
+No entanto, a programação dessas máquinas envo lve. a lém 
+da codificação do problema propriamente dito, o mapeamento da concorrência da aplicação, ou seja, as atividades concorrentes no programa, nas unidades de su-porte ao 
+cálculo (processador e memória ) da arquite tura. A esse mapeamento estão ligadas questões re ferentes à repartição da 
+carga computac ional entre os diferentes processadores e ao 
+compartilhamento de dados entre os nodos. 
+Desta forma, o uso efetivo de aglomerados e de arquiteturas SMP para o PAD requer a realização d o mapeamento da concorrência da aplicação sobre os recursos computacionais disponíveis. No entanto, cabe o bserva r que, 
+na maioria dos casos, este mapeamento não pode ser realizado de forma dire ta, pois a concorrênc ia da aplicação 
+normalmente é supe rior ao paralelismo suportado pe la arquitetura. Portanto, util izando recursos convenc iona is de 
+programação concorrente, parale la ou dis tribuída , tais como 
+multiprogramação leve (threads) [Cohen et ai. , 1998], MPI 
+[Snir et ai. , 1996] ou RPC, o programador deve, além de 
+programar sua aplicação de forma concorrente, determinar 
+o número de tare fas concorrentes adequado para uma determinada arquitetura e distribuir essas tarefas e os respectivos 
+dados entre os processadores e módulos de memória da arquitetura. 
+1 A lista se encontra em www. topS OO . org e apresenta. ano a ano. 
+um contínuo crescimento no número de aglomerados. 
+Anais WSCAD 2003 
+Transpor essas d ificuldades, oferecendo tanto uma inte rface de programação de a lto nível corno mecanismos 
+de gerênc ia de recursos de hardware. implica em abordar questões ligadas à portabilidade de código e de desempenho dos programas [Ai verson et ai. , 1998]. C ilk 
+I Blumofe et a i.. 1995]. Athapascan- 1 I Galilée c t a i.. 1998] 
+c PM 2 [Dcnnculin c t a i. . 1998] são ferramentas para o PAD 
+inseridas nesse contexto. Estas fe rramentas provêem tanto 
+recursos de programação, para descrição da concorrênc ia 
+de uma apl icação, corno introduzem núcleos executivos capazes de tirar proveito dos recursos da arquitetura visando 
+desempe nho na execução de programas. 
+Na próxima seção estes três ambientes são brevemente 
+apresentados. O restante do artigo encontra-se assim organizado: a seção ~ apresenta o modelo de arquitetura de 
+suporte à execução de programas Anahy; na seção 4 são 
+d iscutidas carac te rís ticas ligadas ao controle da correção de 
+execução de programas concorrentes; na seção 5 são apresentadas as primitivas de descrição de concorrênc ia da interface Anahy e na seção 6, o a lgoritmo empregado para 
+escalonamento do programa concorrente. A seção 7 compara características de Anahy com as dos demais ambientes 
+apresentados e . por fi m, uma conclusão é apresentada. 
+2 Ambientes para Alto Desempenho 
+Esta seção descreve, brevemente, três fe rramentas para 
+exploração do processamento de alto desempenho : PM2 , 
+C ilk e Athapascan- 1. Embora não contemplando todas as 
+c lasses de recursos de programação/execução disponíveis. 
+é possível ilustrar abordagens adotadas para {i) representa r o modelo de suporte de execução; (i i) descrever a concorrênc ia de uma aplicação; e para {i i i) incorporar mecanismos de escalo namento. 
+GTLB [Denneulin , 1998] é um núcleo de escalonamento 
+de processos leves implementado sob a forma de biblioteca de fu nções. Essa biblioteca é utilizada em conjunto 
+com PM 2, uma interface aplicativa para desenvolvimento 
+de aplicações concorrentes [Denneulin e t ai. , 1998]. A arquite tura considerada por GTLB é de uma máquina multiprocessad a dotada de uma memória compartilhada (escrita e 
+le itura livre pe los fluxos de execução criados). GTLB prevê 
+um modelo de aplicação do tipo branch-and-bound (ou seja, 
+tarefas independentes). Um protótipo foi implementação do 
+protótipo sobre ag lomerado de computadores. 
+O escalo nador de GTLB explora a independência das tarefas: cada tarefa é d ispa rada no momento em que é criada, podendo ser inte rrompidas e posteriormente reinic iadas. Não há garantia de coerênc ia no acesso aos dados 
+(ordenação) na memória compartilhada. É empregado um 
+mecanismo de migração de tarefas para equilibrar a carga 
+de trabalho entre os diferentes nodos da arquite tura.2 
+2 Maiores infonnações em www. pm2 . org. 
+11 8 
+C il k [Biumofe e t a i., 1995] possui protollpos implementados para a rq uite turas SMP e aglomerados, sendo 
+uma exte nsão à ling uagem C. É prev isto um modelo de 
+programação sobre arquiteturas com memória compartilhada, na qua l fluxos são executados de forma concorrente. 
+A criação de atividades concorrentes é realizada de forma 
+explíc ita e a comunicação por meio de le itura e escrita em 
+memória compartilhada. O mecanismo de si nc ro nização 
+também é explíc ito: um flu xo é capaz de aguardar o térm ino 
+de todos fluxos de execução por ele criados. Assim sendo, 
+criando e sinc ro nizando atividades explic itamente, o programador é capaz de controlar a evolução do processo de 
+troca de dados entre estas durante a execução do programa. 
+O núc leo executivo de C ilk imp lementa um a lgoritmo 
+de escalonamento de lista [Graham, 1969], do tipo ro ubode-traba lho , no q ual um processador ocioso "rouba trabalho"na lis ta de tarefas de um p rocessador a tivo. A estra tégia 
+determina que cada processador execute suas ativ idades priorizando sua profundidade no programa. profund idade q ue 
+pode ser representada pela o rdem de execução das chamadas de funções caso a execução fosse seq üenc ia l. De forma 
+prática, a criação de uma atividade não implica na geração 
+de uma nova atividade de fa to, e sim, no disparo imediato da execução da nova a tividade, ficando a seqüênc ia da 
+atividade criadora em estado de espera do término da a tividade criada para prosseguir sua execução; um mecanismo 
+de continuação, auxiliado por um processo de compilação, 
+garante a correta execução do programa em uma arqui tetura 
+multiprocessada. O objetivo do escalonador de C ilk é mini- · 
+mizar o tempo de execução de programas, no entanto, foram 
+implementadas técnicas para para redução do consumo de 
+memória na execução de programas [Bielloch e t ai. , 1997]. 3 
+Athapascan- 1 [Galilée e t ai. , 1998] oferece a visão de 
+uma arquitetura onde d iversos processadores acessam uma 
+memória compartilhada. As a tividades concorrentes da 
+aplicação são explic itamente codificadas através de tarefas. Uma tarefa é definida como uma seqüência de 
+código, possuindo uma entrada de d ados (parâmetros) e 
+produzindo, ao seu té rmino, um resultado (saída); a leitura dos dados de entrada e a escrita dos d ados de saída 
+são realizadas na memória compartilhada. A correção da 
+execução é garantida disparand o uma ta refa apenas quando 
+os parâmetros necessários para sua execução estejam dispo níveis na memória compartilhada e, uma vez inic iada, 
+não é inte rrompida, voltando a acessar a memória compartilhada apenas para escrita dos resultados. O contro le de tal 
+ordem de precedênc ia é realizado a través de um gra fo de 
+fluxo de dados entre ta refas. Nesse ambiente, a função do 
+escalo nador [Cavalhe iro e t a i., 1998) é de explorar o parale lismo da arquite tura, respeitando a ordem de precedência 
+das ta re fas explíc itas nas trocas de dados. 
+A implementação de A thapascan- 1 considerou 
+:I Maiores infonnações:supertech .lcs . mi t . edu/ cilk. 
+Anais WSCAD 2003 
+a possibilidade de utilizar, no núcleo executivo, 
+diferentes algori tmos de escalonamento (dotados 
+ou não de estratégias de balanceamento de carga) 
+[Cavalheiro et ai. , 1998. Cavalheiro. 200 I ]. Esse ambiente 
+opera em arquiteturas SMP e em aglomerados. sendo 
+utilizado sob a forma de uma biblioteca em programas C++ 
+(um pré-compilador auxi lia no uso desta biblioteca). -I 
+3 Arquitetura Alvo 
+A implementação de Anahy disponibiliza um ambiente 
+para a exploração do processamento de alto desempenho sobre arquiteturas do tipo aglomerado de computadores. onde 
+cada nó pode vir a ser um multiprocessador com memória 
+compartilhada. No entanto, essa arquite tura é considerada 
+apenas para a implementação do ambiente. O programador tem a visão de uma arquitetura virtual multiprocessada 
+dotada de memória comparti lhada. Essas duas visões da arquitetura são ilustradas na figura I . 
+Como destaca a figura I , a arquitetura real é composta 
+por um conjunto de nodos de processamento, dotados de 
+memória local e de unidades de processamento (CPUs). A 
+arquitetura virtual é composta por um conjunto de processadores virtuais (PVs) alocados sobre os nodos e por uma 
+memória comparti lhada pelos PVs. O número de PVs e o tamanho da memória comparti lhada são limitados em função 
+da capacidade dos recursos da arquitetura real. No entanto, 
+a capacidade de processamento e de armazenamento virtuais não alteram o modelo. 
+Cada um dos PVs possui a capacidade de executar 
+seqüencialmente as atividades que a ele forem submeti das: enquanto um PV estiver executando uma a tividade, 
+nenhuma outra sinalização será tratada por e le. Quando ocioso, ou seja, não executando nenhuma atividade do usuário, 
+o PV pode ser despertado ao existir uma nova atividade 
+apta a ser executada. Além das instruções convencionais 
+(aritméticas, lógicas, de controle de fluxo, etc.), foram introduzidas duas novas instruções para descrição da concorrência da aplicação, permitindo a criação de uma nova 
+a tividade e a sincronização de uma atividade com o final de 
+outra, e instruções de alocação, deleção, leitura e escrita na 
+memória compartilhada. Nenhum sinal é previsto para ser 
+enviado entre PVs, estejam estes no mesmo nó ou não. Cada 
+PV conta ainda com um espaço de memória próprio, utilizado para armazenar dados locais às atividades do usuário 
+que serão executadas. 
+A comunicação entre os PVs se dá através da memória 
+compartilhada, acessada pelas instruções introduzidas pela 
+arquitetura virtual. Essa arquite tura não suporta nenhum 
+mecanismo de sincronização: todo controle ao acesso aos 
+dados comparti lhados deve ser feito através das instruções 
+de contro le de concorrência. 
+4 Maiores infonnações: www- id. imag. f r. 
+11 9 
+4 Princípio de Controle de Execução 
+A exemplo de Cilk e de Athapascan-1. entre outras interfaces de programação concorrente, Anahy oferece um 
+mecanismo que garante a correção da execução do programa. O princípio considerado d iz respeito ao controle de 
+dependências de dados entre as diversas atividades concorrentes que serão criadas pelo programa em execução. 
+4.1 Comunicação e sincronização em programas 
+seqüenciais 
+Um programa imperativo seq üencial pode ser visto como 
+uma coleção de instruções elementares, executadas em uma 
+ordem específica dado um conjunto de dados de entrada. 
+Um programa correto produz o mesmo conjunto de dados 
+de saída toda vez que for executado tendo o mesmo conjunto de dados de entrada. Isto porque a mesma seqüência 
+de execução de instruções é reproduzida. 
+Neste contexto, o programador é consciente que seu programa consiste em uma série de transformações de dados 
+em memória. Assim o esforço de codificação materializa as 
+transformações que devem ser sofridas pelos dados em uma 
+seqüência de instruções elementares. Em outras palavras, o 
+resultado da instrução deve ser estocados em algum lugar 
+da memória. Esse valor em memória servirá como dado de 
+entrada para q ue uma instrução futura, na execução do programa, possa e la também ser executad~. Desta forma, em 
+programas imperativos seqüenciais, é resolvido o problema 
+da comunicação de dados entre instruções. 
+No entanto, a comunicação não garante a correta 
+execução do programa. As instruções devem ser sincronizadas de forma que uma instrução não seja executada antes que os dados que e la necessitar como entrada estejam 
+disponíveis na memória. No paradigma de execução imperativo seqüencial, a sincronização entre instruções é garantido pelo próprio mecanismo de execução, no qual as 
+instruções são executadas seqüencialmente, não sendo inic iada a execução de uma instrução Si caso a instrução S;_ 1 
+não tenha sido comple tada. Essa dependência é representada por S;_ 1 -< Si. 
+Existe portanto, na execução de um programa seqüencial imperativo P, uma ordem específica para ativação das 
+instruções dado um conjunto X de dados de entrada: 
+observe que a sincronização é realizada considerando a 
+posição da instrução no fluxo de execução do programa. 
+Uma execução errônea do programa poderia ser causada 
+pela execução de uma instrução fora da ordem prevista 
+ou em duplicata, a não execução de uma instrução ou a 
+execução de uma instrução que não esteja nesta seqüência. 
+Anais WSCAD 2003 
+1'\H,II l'\ 11.1 l'\11.: 1'\t t_l I'\ 1.11 I'\ 11 1'\!.11 l'\!.1 '""' 
+Nl "' "' "" 
+.,..,,..,n,•..w D
+"······ ·~ 
+u ............. ...... . 
+' 
+Figura 1. Modelo lógico e físico da arquitetura de suporte à Anahy. 
+4.2 Comunicação e sincronização entre tarefas 
+Assim como nos programas seqüenciais. programas concorrentes produzem resultados através de transformações de 
+dados recebidos em entrada. No entanto, a programação 
+concorrente (paralela ou distribuída) implica na divisão do 
+trabalho total da aplicação em atividades concorrentes, denominadas tarefas. Inevitavelmente estas tarefas necessitam trocar dados entre si de fo rma a fazer com que o programa evolua. 
+Desse modo, as interfaces para programação concorrente 
+introduzem mecanismos de comunicação de dados e de 
+sincronização as tarefas ([Ghezzi and Jazayeri, 1998]). Os 
+mecanismos de comunicação permitem que dados produzidos por alguma tarefa sejam, de alguma forma, colocados a disposição de uma outra tarefa. Os mecanismos de 
+sincronização permitem a uma tarefa informar a outra que 
+um dado encontra-se d isponível ou verificar a disponibilidade de um determinado dado. Com os mecanismos de 
+sincronização é possível controlar o avanço da execução do 
+programa, não permitindo que tarefas sejam executadas antes que seus dados de entrada estejam disponíveis. 
+É importante observar que, no contexto deste trabalho, a função da sincronização é de conciliar as datas de 
+execução das tarefas em relação à produção/consumo de dados. Muitas ferramentas de programação, no e ntanto, oferecem mecanismos de sincronização que não garantem uma 
+ordem na execução das atividades, garantindo apenas que 
+uma atividade tenha conhecime nto do estado de uma outra; um exemplo clássico é o uso de mutex para controle 
+de execução de sessões críticas. O uso deste tipo de recurso de sincronização, muito embora fundamental para diversas aplicações, introduz um nível de indeterminismo na 
+execução que não permite que seja garantido um determinado resultado para todas execuções de um programa dado 
+um determinado conjunto de dados de entrada. Como este 
+tipo de sincronização não permite controle da comunicação 
+de resultados de tarefas, ela não esta sendo considerada. 
+120 
+Desta forma, a execução E:('Pc· X) de um programa concorrente pode ser representada por uma coleção de tarefas T = (Tt , T2 , ... Tn ) e um conjunto de dados X = 
+(x t . x2, . .. x,), descritos por um grafo de dependências 
+(como em [Galilée et ai., 1998]) Ç = (V, E) , onde os nodos V = T U X são representados pelo conjunto tarefas 
+e de dados manipulados pelo programa e os acessos (leitura/escrita) são representados pelas arestas: E = (T x 
+X) U (X x T ). Nesta representação, (Ti , :t:i) indica que o 
+dado x; é produzido pela tarefa Ti e ( x; , Ti) que o dado X i é 
+necessário para executar a tarefa r;. 
+Estas considerações permitem visualizar as partes componentes do modelo de execução de um programa concorrente em Anahy e definir de forma mais precisa uma tarefa. 
+Um programa em execução consiste em um conjunto de tarefas, onde cada tarefa delimita uma seqüência de instruções 
+elementares e define dois conjuntos de dados: (i ) os dados necessários para in iciar sua execução e (ii) os dados 
+produzidos como resultado de sua execução. A ordem de 
+execução das tarefas é definida pela disponibilidade de seus 
+dados de entrada. Ao terminar, uma tarefa produz um resultado que poderá viabilizar a execução de uma outra tarefa. 
+5 Interface de Programaç.ão Anahy 
+Um dos maiores problemas ligados ao desenvolvimento 
+de programas concorrentes advém do alto grau de liberdade 
+de ação que o programador passa a ter: decomposição da 
+sua aplicação em atividades concorrentes e alocação destas atividades sobre as unidades de cálculo da arquitetura, 
+entre outros. Isto sem contar o número de arquiteturas 
+com características distintas e as inúmeras ferramentas de 
+programação. O modelo proposto por Anahy foi projetado 
+segundo diversos critérios considerados úteis em um modelo de programação concorrente lSkill icorn, 1994]. Entre · 
+estes critérios encontra-se a capacidade de minimizar as dificuldades de gerenciamento de um grande número de fluxos de execução concorrente e de comunicações entre eles. 
+Anais WSCAD 2003 
+5.1 Serviços oferecidos 
+Os serviços da interface de programação de Anahy oferecem ao programador mecanismos para explorar o paralelismo de uma arquitetura multiprocessada dotada de uma 
+área de memória compartilhada, permitindo sincronizar as 
+tarefas concorrentes da aplicação, realizando, implicitame nte. troca de dados entre elas. Esses serviços podem ser 
+representados através das operações fo rk/join. disponibilizando ao programador uma interface de programação bastante próxima ao modelo oferecido pela multiprogramação 
+baseada em processos leves (no que diz respeito a criação e 
+sincronização com o término de flu xos de execução). Essa 
+abstração permite a descrição de atividades sem que o programador identi fique explicitamente quais destas atividades 
+são concorrentes na sua aplicação. 
+Urna operação fo rk consiste na criação lógica de um 
+novo fluxo de execução, sendo o código a ser executado 
+definido por uma função :F definida no corpo do programa. 
+Esse operador retoma um identificador ao novo fluxo criado. No momento da invocação da operaçãofork, a função a 
+ser executada deve ser identificada e passados os parâmetros 
+necessários a sua execução. O programador não possui nenhuma hipótese sobre o momento em que este flu xo será 
+disparado. Sabe-se que após seu término, um resultado será 
+produzido, ou seja, Y = :F( X). 
+A sincronização com o término da execução de um fluxo 
+é realizada através da operação join, identificando o fluxo 
+a ser sincronizado. Essa operação permite que um fl uxo 
+bloqueie, aguardando o término de outro fluxo, de forma a 
+recuperar os resultados produzidos. Ou seja, recuperar Y 
+produzido por :F( X) . 
+Desta forma, as operações de sincronização (jork ejoin) 
+realizadas no interior de um fluxo de execução permitem definir novas tarefas que poderão vir a ser executadas de forma 
+concorrente. Essas tarefas são definidas implicitamente: 
+• no momento dofork: o novo fluxo de execução inicia 
+executando uma nova tarefa que possui como dados 
+de entrada os argumentos da própria função; 
+• no momento de um join: o flu xo de execução termina 
+a execução de urna tarefa e cria uma nova a partir 
+da instrução que sucede (na ordem lexicográfica) o 
+operador join. Essa nova tarefa tem como dados de 
+entrada a memória local do fluxo de execução (atualizada até o momento que precedeu a realização do 
+join ) e os resultados retornados pela função executada 
+pelo fluxo sincronizado;e, 
+• no fim da função executada por um fluxo de 
+execução. 
+Observe que o acesso à memória compartilhada é realizado implicitamente pelos operadoresfork e j oin. 
+121 
+Outro aspecto à observar é a capacidade de execução 
+seqüencial do programa quando eliminados os operadores 
+de sincronização. Em outras palavras: a execução concorrente da aplicação produz o mesmo resultado que ofereceria 
+a execução seq üencial do mesmo programa. o que faci li ta o 
+desenvolvimento do programa e sua depuração. 
+5.2 Sintaxe utilizada 
+Anahy está sendo desenvolvido de forma a permlltr 
+compatibilidade com o padrão POSJX para threads (IEEE 
+P I 003.c). Desta forma. as primitivas e estruturas oferecidas são um subconj unto dos serviços oferecidos por este 
+padrão. Os atuais esforços de implementação estão concentrados em uma interface de serviços para programas C/C++. 
+Definição do corpo de um fluxo de execução O corpo 
+de um fluxo de execução é defi nido como uma fu nção C 
+convencional, como representado no seguinte exemplo: 
+void* func( void * in ) { 
+/* código da função * / 
+return out; 
+Neste exemplo, a função f une pode ser instanciada em um 
+fluxo de execução próprio. O argumento in corresponde 
+ao endereço de memória (na memória compartilhada) onde 
+se encontram os dados de entrada da função. A operação 
+de retorno (return out) foi colocada apenas para explicitar que, ao término da execução de f u nc, o endereço de 
+um dado na memória compartilhada deve ser retornado pela 
+função, endereço este referente ao armazenamento do resultado produzido pela tarefa. 
+Sincronização de fluxos de execução As sintaxes das 
+operações fork e join correspondem as operações de 
+criação e de espera por término de thread em POSIX: 
+p t hread c reate e pthread j o i n. As sintaxes destes operadÜres são exempli ficadasp or: 
+int athread_create( athread_t *th, 
+athread_attr_ t *atrib, 
+void *(*func) (void * ) , 
+void *in ) ; 
+int athread_join(athread_t th, void **res); 
+Nesta sintaxe, athread_create cria um novo flu xo de 
+execução para a função func; a entrada desta função está 
+presente no endereço de memória i n. O novo fluxo criado 
+poderá ser referenciado posteriormente através do valor th, 
+o qual consiste em um identificador único. Os valores fornecidos por atr ib definem atributos com quais o programador informa características do novo fluxo de execução no 
+que diz respeito a sua execução (por exemplo, necessidades 
+Anais WSCAD 2003 
+de memória). Na operação athread_join é identificado 
+o flu xo com o qual se quer realizar a sincronização c res 
+identifica um ende reço de memória (compart ilhada) para os 
+dados de retorno do tluxo. Ambos operadores retornam um 
+código de e rro. 
+6 Concepção do Núcleo Executivo 
+Anahy prevê a execução de programas concorrentes 
+tanto sobre aglomerados de computadores l:Omo sobre arquiteturas SMP. O ambiente provê transparência no acesso 
+aos recursos de processamento da máquina. Como resultado, o uso de Anahy como ambiente de programação/exec ução pe rmite que o programador codifique apenas sua 
+aplicação. livrando-o de especificar o mapeamento das tarefas nos processadores (ou dos dados nos módulos de 
+memória). O núc leo executivo foi igualmente concebido 
+de forma a suportar a introdução de mecanismos de balanceamento de carga. 
+6.1 Algoritmo de escalonamento 
+O algoritmo de escalonamento pressupõe a arquitetura 
+descrita na seção 3 e utiliza. como unidade de manipulação, 
+urna ta refa. Uma tarefa é urna unidade de trabalho, definida 
+pe lo programa em execução, composta por urna seqüência 
+de instruções capaz de ser executada em tempo finito- uma 
+tarefa não possui nenhuma dependência externa (tal uma 
+sinc ro nização). nem pode entrar em nenhuma situação de 
+errônea, tal um laço sem fim. Dentre as instruções executad as por uma tarefa. podem existir operações de criação de 
+novas tare fas. Como visto na seção 5. I, uma tarefa termina 
+ao executar uma operação de sincronização com uma tarefa 
+com o término de outras tare fas. 
+O algoritmo gerencia quatro listas de tarefas: a primeira 
+contém as tare fas prontas (aptas a serem lançadas), a segunda, as tarefas terminadas cujos resultados ainda não foram solic itados (a operação de join sobre estas tarefas ainda 
+não foi realizada). A terceira e a quarta lista contêm tarefas 
+bloqueadas e desbloquadas, respectivamente. 
+Pa ra compreender o algoritmo de éscalonamento, considere uma arquitetura monoprocessada. O processador, inic ialmente vazio, busca a primeira tare fa, T J , da lista de tarefas prontas (no caso prático, a função main) e inic ia sua. 
+execução. As instruções elementares de T 1 são computadas normalmente. já as que descrevem o comportamento 
+concorrente da aplicação envolvem o processo de escalonamento. Caso seja executada uma operação f ork, uma nova 
+tarefa T2 é criada e armazenada na lis ta de tarefas prontas 
+e TJ segue executando. Caso s~ja executada uma operação 
+de j oin , por exemplo com T2, TJ termina e uma nova tare fa 
+T3 é criada, sendo o início de seu código de terminado pela 
+instrução que sucede o join; o estado inicial de T3 é blo122 
+quado, pois T3 somente poderá executar quando T2 for terminada. tendo produzido os dados necessários a T3 : a essa 
+re lação de dependência dá-se a notação T2 ~ TJ. A tarefa 
+T2 é então re tirada da lis ta de tarefas prontas e executada. 
+Ao término de T"J.. a relação T2 ~ T3 é sat is feita, sendo T3 
+desbloquada e iniciada, tendo como entrada os dados produzidos por T"J.. Esse procedimento pode ser recursivo. 
+No caso de uma a rquitetura para lela, dois ou mais 
+processadores executam o mesmo algoritmo descrito no 
+parágrafo anterior, implicando que duas o u mais tarefas executem simultaneame nte. Assim. no momento em que uma 
+tarefa T; solicitar um join com TJ, duas o utras s ituações podem ocorrer: ou Tj já terminou o u TJ está sendo executada 
+no momento. Caso TJ já tenha terminado, o procedimento 
+consiste em recupera r os dados produzidos por TJ permitindo que o processador prossiga com a execução de TH 1 
+(TJ é retirada da lis ta de tarefas terminadas). Caso T; esteja 
+sendo executada, TH 1 permanece bloqueada e o processador busca uma nova tarefa na lis ta de tarefas prontas. TH I 
+será desbloqueada quando TJ for te rminada. 
+Esse algoritmo permite obter o tempo de execução de 
+uma tarefa t(T;) e sua data de térmi no máxima T(T;): 
+k 
+T(T;):::; t(T;) +T(T;- t} + L t(T;) 
+j = O 
+Ou seja, o tempo necessário para executar uma tarefa T1 é 
+o custo da execução de suas instruções e lementares, mais o 
+custo associado à criação de m tarefas concorrentes, sendo 
+o custo da criação de uma tarefa CTc . A data de término de 
+uma tarefa T; deve considerar o tempo de execução das tarefas que a precedem. Esses tempos colocam em evidência 
+que uma tarefa não pode ser inic iada antes que todas as tarefas que produzam dados necessários à sua computação 
+não estejam concluídas. Portanto, em um programa em 
+execução, existem re lações entre suas tarefas, representadas 
+por Tj ~ T; (leia-se o infc io de Ti depende do té rmino de 
+Tj) de tal forma que é possíve l identificar caminhos de dependência de fluxos d e dados entre as tarefas. Dentre estes, 
+a seguinte seqüência com k tarefas: 
+E(Pc, X) = TJ ~ ... ~ Tk- 2 ~ Tk- 1 ~ Tk 
+define o maior caminho de transformação de dados no programa Pc tendo como entrada X. Essa seqüência é denominada caminho crítico e representa a carga computac io na l do 
+problema que não pode ser paralelizado ([Graham, I 969], 
+[Ko nig and Roch, 1997]). Ou seja, para um Pc(X), 
+determina seu tempo mínimo de execução. 
+Anais WSCAD 2003 
+A ex1stencia de um caminho crítico norteia a 
+implementação do escalonador de Anahy: todo custo 
+adicional à ext:cução de tarefas deve ser evitado e. durante 
+toda execução do programa. ao menos um dos processadores deve estar ativo executando uma tarefa deste caminho. 
+Partindo da análise de T (Pc. X) pode ser observado 
+que a ocorrência destas situações resultam em atrasos no 
+lançamento de T(tk·), e no consequentc aumento no tempo 
+no processamento do caminho crít ico. 
+6.2 Escalonamento multinível 
+Da implementação do núcleo executivo, destaca-se sua 
+organização do escalonamento em três níveis. O primeiro 
+é realizado pelo sistema operacional e consiste no mapeamento dos fluxos de execução associados aos PVs aos recursos físicos de processamento (de forma equivalente, os 
+dados manipulados em um nó na memória local). 
+O escalo namento apl icativo, no qual se dá a distribuição 
+da carga computacional c o controle da execução do programa, é realizado nos níveis seguintes. O primeiro deles 
+refere-se a alocação das tarefas aos PVs. Nesta alocação 
+é considerada a ordem de execução das tarefas (controle 
+semântico) e o escalonamento gerencia as listas de tarefas 
+(prontas, terminadas, etc.) de forma g lobal aos PVs. 
+Finalmente, o terceiro nível de escalonamento é encarregado da distribuição da carga computacional gerada entre os nodos que compõem a arquitetura utilizada. Nesta 
+distribuição podem ser considerados diversos fatores, entre eles o custo computacional das tarefas e a localidade 
+física dos dados - essa última pode ser obtida através de 
+uma análise da dependência dos dados de entrada e saída 
+das tare fas do usuário. 
+7 Sumário 
+A tabela I sumariza a lgumas das características dos ambientes descritos na seção 2 e as compara com as encontradas em Anahy. Como característica comum, destaca-se 
+o fato de todos os ambientes possuírem um núcleo executívo. Também é ressaltado, que o modelo inicial de C ilk 
+não foi previsto para aglomerado, uma extensão proveu suporte à esta arquitetura e que Athapascan-1 possui um précompilador, em opção ao uso direto da biblioteca. 
+Em relação ao escalonamento, todos os ambientes incorporam a lguma forma de distribuição de tarefas. Embora as diferentes técnicas de escalonamento possam afetar 
+o desempenho na execução de programas, destaca-se que, 
+à exceção de GTLB, os mecanismos empregados provêem 
+suporte ao controle semântico dos programas. Enquanto 
+em Cilk este contro le está associado à sincro nização entre atividades, em Athapascan-1 e em Anahy a semântica 
+é controlada pela troca de dados entre tarefas. Os mecanismos empregados, no entanto, diferem: enquanto Anahy 
+123 
+dispara a execução de uma tarefa quando o dado que ela 
+produz se faz necessário a uma outra. Athapascan-1 habilita 
+a execução de uma tarefa assim que os dados necessários a 
+sua execução encontram-se disponíveis. 
+As estra tégias adotadas por Athapascan-1 e Anahy no 
+controle semântico re fletem a forma como cada ambiente 
+manipula a memória compartilhada. Athapascan-1 exige 
+o uso de tipos de dados especiais para compartilhamento 
+de informações: acessos a estes dados são controlados por 
+um mecanismos à parte. Em Anahy, os dados trocados 
+entre tarefas são obtidos implicitamente, na criação c na 
+sincronização de tarefas. Resulta destas duas abordagens 
+que em Anahy a manipulação do grafo de dependências é 
+realizada sob demanda de sincronizações, de forma semelhante a Cilk, no controle do avanço da execução. 
+8 Conclusão 
+O presente trabalho apresentou o estado atual do desenvolvimento de Anahy, um ambiente para exploração do processamento de alto desempenho em aglomerados de computadores e em arquiteturas SMP. O enfoque principal foi 
+dado à interface de programação proposta e aos princípios 
+adotados para modelagem do ambiente, considerando 
+tanto de sua interface de programação quanto ao núcleo 
+executivo. Trabalho anteriores ([Garzão et a i., 200 I], 
+[Villa Real et ai. , 2002]) abordam a questão da portabilidade do ambiente e dos programas escritos em Anahy- são 
+discutidos a opção desenvolver o ambiente com uso de ferramentas de sofware livre e o uso de mecanismos de escalonamento a nível aplicativo. 
+Anahy encontra-se disponível em uma versão para arquiteturas SMP. O modelo adotado para a interface de 
+programação tem sido validado através da implementação 
+de aplicações em programas utilizando o princípio de 
+programação de Anahy com ferramentas tradicionais de 
+programação, como MPI e threads POSIX. Uma destas 
+aplicações (busca de padrões de imagens) encontra-sedescrita em [Moschetta et a i., 2002]. 
+As próximas etapas têm por objetivo uma versão para 
+aglomerados e a introdução de mecanismos de escalonamento dotados de técnicas de balanceamento de carga. Por 
+fim, deverão ser introduzidos os mecanismos definidos por 
+POSIX para controle de sincronizações entre processos leves (sessões críticas e variáveis de cond ição). Muito embora 
+a utilização destes mecanismos não seja recomendada em 
+Anahy, devido a potencial perda de desempenho, eles deverão ser incorporados para faci litar a compatibilidade com 
+códigos já existentes. 
+Anais WSCAD 2003 
+Tabela 1 Características de ambientes de programação concorrente 
+PM•/GTLB C ilk Athapuscun-1 Anuhy 
+Lin~:uu~:em buse c c C++ c 
+Padrão I'OSIX threads Não Não Não Sim 
+Recursos de prtll(rumaçiio Biblioteca Extensão dc C Bibliotcca Bihliotcca 
+Compilador Não Sim Pré-compilador Não 
+Núcleo executivo Sim S im Sim Sim 
+Suporte à uglomcrudos Sim Não Sim Sim 
+Esculonamento Balancc:uncnto de carga Companilhamcnto de Diversos. estáticos e Algoritmos de lista 
+dinâmico carga din:lmico dinâmil:os dinâmicos 
+Controle semântico Não Fluxo de execução Fluxo dc dados Dependência de dados 
+Sincronização Explícita Explícita Implícita Explícita 
+Dl."icrição da concorrência Explícita Explícita Explícita Explícita 
+Compartilhamento de dados Mensagens Memória global Mcmória companilhada Memória companilhada 
+Tipos de dados cspcciuis Não Não 
+Referências 
+[Alverson et ai. , 19981 Alverson, G. A. , Griswold, W. G., 
+Lin. C., Notkin, D., and Snyder, L. ( 1998). Abstractions 
+for portable, scalahle parallel programming. IEEE Trans. 
+0 11 Parai/e/ and DisTribwed SysTems, 9( I ):7 1-86. 
+(Blelloch et ai.. 1997] Blelloch, G. E., Gihbons, P. B., Matias, Y. , and Narlikar, G. J. ( 1997). Space-efficient scheduling of parallelism with synchronization variables. In 
+Proc. of Tfle 9111 Annual ACM Symp. on Parai/e/ AlgoriThms and ArchiTecTures, Newport. 
+[Blumofe et ai. , 1995] Blumofe, R. D .. Joerg, C. F., Kuszmaul. B. C .. Leiserson. C. E., Randall, K. H., and Zhou, 
+Y. C. E. ( 1995). Cilk: an efficient multithreaded runtime 
+system. ACM SIGPLAN NoTices, 30(8):207-216. 
+[Cavalheiro, 2001] Cavalheiro, G. G. H. (2001). A general scheduling framework for parallel execution environments. In Proceedings of SLAB'Of , Brisbane, Austral ia. 
+[Cavalheiro et ai. , 1998] Cavalheiro, G. G. H., Denneulin, 
+Y. , and Roch, J.-L. ( 1998). A general modular specification for distributed schedulers. In Verlag, S., editor, 
+Proc. of Europar'98, Southampton. 
+[Cohen et ai. , 1998] Cohen, W. E. et ai ( 1998). Exploitation of multithreading to improve program performance. In Proc. ofThe Ya /e Mu/TiThreaded Programming 
+Workshop, New Havcn. 
+[Denneulin, 1998] Denneulin, Y. ( 1998). ConcepTion e f ordonnancemeflf des applicaTions hau1emen1 irrégulieres 
+dons un co111ex1e de parallélisme à grain fin. PhD thesis, 
+Université des Sciences et Technolog ies de Lille, Lille. 
+[Denneulin et ai., 1998] Denneulin, Y., Namyst, R. , and 
+Méhaut, J. F. ( 1998). Architecture virtualization with 
+mobile threads. In Proc. of ParCo 97, volume 12 of Advances in Parai/e/ Computing, Amsterdam. Elsevier. 
+124 
+Sim Não 
+[Galilée et ai.. 1998] Galilée, F., Roch, J.-L. , Cavalheiro, 
+G. G. H., and Doreille. M. ( 1998). Athapascan-1: online building data Oow graph in a parallcl language. In 
+Pact '98, Paris, France. 
+[Garzão et ai.. 200 I J Garzão, A. S .. Vi lia Real. L. C.. e Cavalheiro, G. G. H. (200 I). Ferramentas para desenvolvimento de um ambiente de programação sobre agregados. 
+In Anais do Workshop em Software Livre, Porto Alegre. 
+IGhezzi and Jazayeri , 1998] Ghezzi, C. and Jazayeri. M. 
+( 1998). Programming Language Concepts. John Wilei 
+& Sons. New York, 3 edition. 
+[Graham, 1969] Graham, R. L. ( 1969). Bounds on multiprocessing timing anomalies. SIAM Joumal on Applied 
+Mathematics, 17(2):4 1 ~29. 
+[Konig and Roch, 1997] Konig, J.-C. et Roch, J.-L. ( 1997). 
+Machines virtuelles e t techniques d'ordonnancement. In 
+Barth, D. et ai editor, /CaRE'97: ConcepTion etmise en 
+oeuvre d'applications parai/eles irrégulieres de grande 
+tail/e, Aussois. CNRS. 
+[Moschetta et ai., 2002] Moschetta, E., Osório, F. S .. e Cavalheiro, G. G. H. (2002). Reconhecimento de imagens 
+em aplicações críticas. In /// Workshop em SisTemas de 
+Alto Desempenho, Vitória. SBC. 
+[Skillicorn, 1994] Skillicorn, D. ( 1994 ). Foundations o f 
+Parai/e/ Programming. Cambridge, Great Britain. 
+[Snir e t ai. , 1996] Snir, M., Otto, S. W., Huss-Lederman, 
+S., Walker, D. W., and Dongarra, J. ( 1996). MP/: the 
+complete reference. MIT Press, Cambridge, MA, USA. 
+[Vi lia Real et ai., 2002] Vi lia Real, L. C., Dali' Agnol , 
+E. C., e Cavalheiro, G. G. H. (2002). Construção de um 
+ambiente de programação para o processamento de alto 
+desempenho. In ERAD 2002: Sessão de Pôsteres, São 
+Leopoldo. SBC. 
