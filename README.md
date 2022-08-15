@@ -22,3 +22,6 @@ arquivos ipynb do google colab e resultados gerados por eles
 ### r
 scripts R (Rmd) e arquivos produzidos por eles
 
+### trabalhos_relacionados
+referências utilizadas na seção 2. Trabalhos Relacionados
+
